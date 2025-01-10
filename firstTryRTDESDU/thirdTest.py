@@ -1,14 +1,13 @@
 import rtde_receive
 import rtde_control
 import time
-rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102")
-rtde_c = rtde_control.RTDEControlInterface("192.168.56.101")
+rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.101")
+rtde_c = rtde_control.RTDEControlInterface("192.168.56.102")
 velocity = 0.5
 acceleration = 0.5
 dt = 1.0/500  # 2ms
 lookahead_time = 0.1
 gain = 300
-joint_q = [-1.54, -1.83, -2.28, -0.59, 1.60, 0.023]
 
 # Loop to increment the first joint's position
 try:
