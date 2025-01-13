@@ -111,3 +111,8 @@ try:
 
 except KeyboardInterrupt:
     print("Program interrupted by user.")
+
+
+
+
+#Launch along test 4. Robot 101, the ones the moves horizontally, moves erraticatly: Maybe vertical movement of robot 101 is to fast to acomplish, maybe the refresh ratio of postion from 101 readed by 102 is to slows,  maybe the interuption of movement is not the correct -> need to check stopj (or simimilar) from the API of SDU
