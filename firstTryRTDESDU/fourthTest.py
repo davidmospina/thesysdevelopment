@@ -1,7 +1,7 @@
 import rtde_receive
 import rtde_control
 import time
-rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102")
+# rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102")
 rtde_c = rtde_control.RTDEControlInterface("192.168.56.102")
 
 targetA = [0.28697383813837185, -0.14998050513491248, 0.6909854580323809, -0.16554934951083813, 1.567441645128796, -0.2602440801528517]

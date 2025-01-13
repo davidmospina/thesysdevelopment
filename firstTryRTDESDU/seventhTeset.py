@@ -21,21 +21,16 @@ def getSegmentTarget(timestep, limit_min=-0.4499805051349124, limit_max=0.449980
     Returns:
     - Position along the segment (float).
     """
-    # Compute the midpoint and amplitude of the segment
     midpoint = (limit_max + limit_min) / 2
     amplitude = (limit_max - limit_min) / 2
-
-    # Calculate the position using a sine wave
-    # The sine wave is shifted and scaled to move between limit_min and limit_max
     position = midpoint + amplitude * math.sin(2 * math.pi * freq * timestep)
     return position
-
 
 # Parameters
 vel = 0.5
 acc = 0.5
 rtde_frequency = 500.0
-dt = 1.0/rtde_frequency  # 2ms
+dt = 1.0 / rtde_frequency  # 2ms
 flags = rtde_control.RTDEControlInterface.FLAG_VERBOSE | rtde_control.RTDEControlInterface.FLAG_UPLOAD_SCRIPT
 ur_cap_port = 50002
 robot_ip = "192.168.56.101"
@@ -53,9 +48,9 @@ rtde_c = rtde_control.RTDEControlInterface("192.168.56.101", rtde_frequency, fla
 # Set application real-time priority
 os_used = sys.platform
 process = psutil.Process(os.getpid())
-if os_used == "win32":  # Windows (either 32-bit or 64-bit)
+if os_used == "win32":
     process.nice(psutil.REALTIME_PRIORITY_CLASS)
-elif os_used == "linux":  # linux
+elif os_used == "linux":
     rt_app_priority = 80
     param = os.sched_param(rt_app_priority)
     try:
@@ -67,31 +62,34 @@ elif os_used == "linux":  # linux
 
 time_counter = 0.0
 
-global targetMiddle
-# Get the current joint positions
-targetMiddle = rtde_r.getActualTCPPose()
+# # Get the current joint positions
+# lock = threading.Lock()
 
 # Initialize targets
+targetMiddle = rtde_r.getActualTCPPose()
 targetA = targetMiddle.copy()
-targetA = -0.4499805051349124  # Modify the 2nd element
+targetA[1] = -0.4499805051349124
 targetB = targetMiddle.copy()
-targetB = 0.4499805051349124  # Modify the 2nd element
+targetB[1] = 0.4499805051349124
 
 # Function to update the z-component of targets
-def update_z_component():
-    while True:
-        try:
-            # Update z-component dynamically
-            targetMiddle = rtde_r.getActualTCPPose()
-            print("inside of thread value:" + str(targetMiddle))
-            time.sleep(0.002)  # Adjust update frequency as needed
-        except Exception as e:
-            print(f"Error in update thread: {e}")
-            break
+# def update_z_component():
+#     while True:
+#         try:
+#             new_pose = rtde_r.getActualTCPPose()
+#             with lock:  # Acquire the lock
+#                 # Update the elements of targetMiddle in-place
+#                 for i in range(len(targetMiddle)):
+#                     targetMiddle[i] = new_pose[i]
+#                 print("inside of thread value:" + str(targetMiddle))
+#             time.sleep(0.002)  # Adjust update frequency as needed
+#         except Exception as e:
+#             print(f"Error in update thread: {e}")
+#             break
 
 # Start the update thread
-z_update_thread = threading.Thread(target=update_z_component, daemon=True)
-z_update_thread.start()
+# z_update_thread = threading.Thread(target=update_z_component, daemon=True)
+# z_update_thread.start()
 
 # Main movement loop
 actual_q = rtde_r.getActualQ()
@@ -100,9 +98,11 @@ rtde_c.moveJ(actual_q, 0.25, 0.5, False)
 try:
     while True:
         t_start = rtde_c.initPeriod()
-        x = getSegmentTarget(timestep=time_counter,)
+        targetMiddle = rtde_r.getActualTCPPose()
         
-        targetMiddle[1] = x 
+        x = getSegmentTarget(timestep=time_counter)
+
+        targetMiddle[1] = x
         print("out of thread values:" + str(targetMiddle))
 
         rtde_c.servoL(targetMiddle, vel, acc, dt, lookahead_time, gain)
@@ -111,6 +111,3 @@ try:
 
 except KeyboardInterrupt:
     print("Program interrupted by user.")
-
-
-
