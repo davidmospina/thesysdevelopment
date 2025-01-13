@@ -18,3 +18,6 @@ try:
         rtde_c.waitPeriod(t_start)
 except KeyboardInterrupt:
     print("Program interrupted by user.")
+
+
+# initPeriod() alongside waitPeriod() force the code to be run in a cycle, mantaining the 500Hz control rate
