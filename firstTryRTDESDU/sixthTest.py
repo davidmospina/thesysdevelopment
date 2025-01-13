@@ -43,7 +43,7 @@ robot_ip = "192.168.56.101"
 lookahead_time = 0.1
 gain = 600
 
-# ur_rtde realtime priorities
+# ur_rtde realtime priorities [from 0 to 99]
 rt_receive_priority = 90
 rt_control_priority = 85
 
