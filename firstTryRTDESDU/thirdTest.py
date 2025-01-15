@@ -21,3 +21,4 @@ except KeyboardInterrupt:
 
 
 # initPeriod() alongside waitPeriod() force the code to be run in a cycle, mantaining the 500Hz control rate
+#check comment
