@@ -1,11 +1,21 @@
 def verticalMove_external():
   global _hidden_verificationVariable=0
-  set_tcp(p[0.0,0.0,0.0,0.0,0.0,0.0])
+  step_count_47e45bda_5195_4adf_beb6_00c513fd0fc4 = 0.0
+  thread Step_Counter_Thread_eb66b632_50e2_48d5_aa45_48d4d1ec11a7():
+    while (True):
+      step_count_47e45bda_5195_4adf_beb6_00c513fd0fc4 = step_count_47e45bda_5195_4adf_beb6_00c513fd0fc4 + 1.0
+      sync()
+    end
+  end
+  run Step_Counter_Thread_eb66b632_50e2_48d5_aa45_48d4d1ec11a7()
+  set_gravity([0.0, 0.0, 9.82])
   set_tool_communication(False, 115200, 0, 1, 1.5, 3.5)
   set_tool_output_mode(0)
   set_tool_digital_output_mode(0, 1)
   set_tool_digital_output_mode(1, 1)
   set_tool_voltage(0)
+  set_tcp(p[0.0,0.0,0.0,0.0,0.0,0.0])
+  set_safety_mode_transition_hardness(1)
   set_standard_analog_input_domain(0, 1)
   set_standard_analog_input_domain(1, 1)
   set_tool_analog_input_domain(0, 1)
@@ -13,89 +23,74 @@ def verticalMove_external():
   set_analog_outputdomain(0, 0)
   set_analog_outputdomain(1, 0)
   set_input_actions_to_default()
-  set_safety_mode_transition_hardness(1)
   set_target_payload(0.000000, [0.000000, 0.000000, 0.000000], [0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000])
-  set_gravity([0.0, 0.0, 9.82])
   # begin: URCap Installation Node
   #   Source: External Control, 1.0.5, FZI Research Center for Information Technology
   #   Type: External Control
   # end: URCap Installation Node
-  step_count_c539a3ee_ebda_4acd_b672_70acd0e2388c = 0.0
-  thread Step_Counter_Thread_a92a609a_c70c_4948_bda3_ee69837723b4():
-    while (True):
-      step_count_c539a3ee_ebda_4acd_b672_70acd0e2388c = step_count_c539a3ee_ebda_4acd_b672_70acd0e2388c + 1.0
-      sync()
-    end
-  end
-  run Step_Counter_Thread_a92a609a_c70c_4948_bda3_ee69837723b4()
   def SubProgram_1():
-    $ 16 "SubProgram_1" "noBreak"
+    $ 14 "SubProgram_1" "noBreak"
+    $ 15 "tmp≔p[0,0,0,0,0,0]"
+    global tmp=p[0,0,0,0,0,0]
+    $ 16 "tmp≔p[0,0,0,0,0,0]"
+    global tmp=p[0,0,0,0,0,0]
     $ 17 "Loop"
     while (True):
-      $ 18 "tmp≔p[0,0,0,0,0,0]"
-      global tmp=p[0,0,0,0,0,0]
-      $ 19 "tmp[0] = read_input_float_register(0)"
+      $ 18 "tmp[0] = read_input_float_register(0)"
       tmp[0] = read_input_float_register(0)
-      $ 20 "tmp[1] = read_input_float_register(1)"
+      $ 19 "tmp[1] = read_input_float_register(1)"
       tmp[1] = read_input_float_register(1)
-      $ 21 "tmp[2] = read_input_float_register(2)"
+      $ 20 "tmp[2] = read_input_float_register(2)"
       tmp[2] = read_input_float_register(2)
-      $ 22 "tmp[3] = read_input_float_register(3)"
+      $ 21 "tmp[3] = read_input_float_register(3)"
       tmp[3] = read_input_float_register(3)
-      $ 23 "tmp[4] = read_input_float_register(4)"
+      $ 22 "tmp[4] = read_input_float_register(4)"
       tmp[4] = read_input_float_register(4)
-      $ 24 "tmp[5] = read_input_float_register(5)"
+      $ 23 "tmp[5] = read_input_float_register(5)"
       tmp[5] = read_input_float_register(5)
-      $ 25 "setp≔tmp"
-      global setp=tmp
-      $ 26 "sync()"
+      $ 24 "If tmp≠setp"
+      if (tmp != setp):
+        $ 25 "setp≔tmp"
+        global setp=tmp
+        $ 26 "Popup"
+        popup(str_cat("",setp), "Message", False, False, blocking=True)
+      end
+      $ 27 "sync()"
       sync()
     end
   end
   def move_vTCP():
-    $ 27 "move_vTCP" "noBreak"
-    $ 28 "A=2"
-    A=2
-    $ 29 "p=0"
-    p=0
-    $ 30 "w=0.2"
-    w=0.2
-    $ 31 "Loop"
+    $ 28 "move_vTCP" "noBreak"
+    $ 29 "Loop"
     while (True):
-      $ 32 "p = p + w*(2*3.1416/500)"
-      p = p + w*(2*3.1416/500)
-      $ 33 "move_frame('vTCP', p[0.286,0,setp[2],0,1.57,0],'world')"
+      $ 30 "move_frame('vTCP', p[0.286,0,setp[2],0,1.57,0],'world')"
       move_frame("vTCP", p[0.286,0,setp[2],0,1.57,0],"world")
-      $ 34 "sync()"
+      $ 31 "sync()"
       sync()
     end
   end
   $ 2 "BeforeStart"
   $ 3 "setp≔p[0.286,0,0.6,0,1.75,0]"
   global setp=p[0.286,0,0.6,0,1.75,0]
-  $ 4 "rtde_set_watchdog('input_int_register_0',1,'Pause')"
-  rtde_set_watchdog("input_int_register_0",1,"Pause")
-  $ 5 "write_output_integer_register(0,1)"
-  write_output_integer_register(0,1)
   while (True):
-    $ 6 "Robot Program"
-    $ 7 "reset_world_model()"
+    $ 4 "Robot Program"
+    $ 5 "reset_world_model()"
     reset_world_model()
-    $ 8 "add_frame('vTCP', p[0.286,0,0.690,0,1.57,0],'world')"
+    $ 6 "add_frame('vTCP', p[0.286,0,0.690,0,1.57,0],'world')"
     add_frame("vTCP", p[0.286,0,0.690,0,1.57,0],"world")
-    $ 9 "thread move_vTCPThread(): move_vTCP() end"
+    $ 7 "thread move_vTCPThread(): move_vTCP() end"
     thread move_vTCPThread(): move_vTCP() end
-    $ 10 "movej('vTCP')"
+    $ 8 "movej('vTCP')"
     movej("vTCP")
-    $ 11 "frame_tracking_enable('world')"
+    $ 9 "frame_tracking_enable('world')"
     frame_tracking_enable("world")
-    $ 12 "thrd = run move_vTCPThread()"
+    $ 10 "thrd = run move_vTCPThread()"
     thrd = run move_vTCPThread()
-    $ 13 "Loop"
+    $ 11 "Loop"
     while (True):
-      $ 14 "movel(struct(pose=p[0,0.2,0,0,0,0],frame ='vTCP'), v= 0.1)"
+      $ 12 "movel(struct(pose=p[0,0.2,0,0,0,0],frame ='vTCP'), v= 0.1)"
       movel(struct(pose=p[0,0.2,0,0,0,0],frame ="vTCP"), v= 0.1)
-      $ 15 "movel(struct(pose=p[0,-0.2,0,0,0,0],frame ='vTCP'), v=0.1)"
+      $ 13 "movel(struct(pose=p[0,-0.2,0,0,0,0],frame ='vTCP'), v=0.1)"
       movel(struct(pose=p[0,-0.2,0,0,0,0],frame ="vTCP"), v=0.1)
     end
   end
