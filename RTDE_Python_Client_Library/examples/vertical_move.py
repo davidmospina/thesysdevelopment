@@ -29,7 +29,8 @@ import logging
 
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
-
+import math
+import time
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -57,7 +58,7 @@ con.send_output_setup(state_names, state_types)
 setp = con.send_input_setup(setp_names, setp_types)
 
 # Setpoints to move the robot to
-setp1 = [-0.12, -0.43, 0.14, 0, 3.11, 0.04]
+setpList = [0.286,0,0.69,0,1.57,0]
 
 
 setp.input_double_register_0 = 0
@@ -66,10 +67,6 @@ setp.input_double_register_2 = 0
 setp.input_double_register_3 = 0
 setp.input_double_register_4 = 0
 setp.input_double_register_5 = 0
-
-# The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz watchdog
-watchdog.input_int_register_0 = 0
-
 
 def setp_to_list(sp):
     sp_list = []
@@ -83,12 +80,25 @@ def list_to_setp(sp, list):
         sp.__dict__["input_double_register_%i" % i] = list[i]
     return sp
 
+def getSegmentTarget(p, amp = 0.3, freq=0.2):
+
+    p = p + freq*(2*3.1416/500)
+    position = 0.69+amp*math.sin(p)
+    return position,p
+
 
 # start data synchronization
 if not con.send_start():
     sys.exit()
+p = 0
+
+# Target frequency in Hz
+frequency = 500
+cycle_time = 1.0 / frequency
 
 while keep_running:
+    start_time = time.time()  # Record the start time of the loop
+
     # receive the current state
     state = con.receive()
 
@@ -96,15 +106,22 @@ while keep_running:
         break
 
     # do something...
-    
-    
-    list_to_setp(setp, new_setp)
-    print("New pose = " + str(new_setp))
+    setpList[2], p = getSegmentTarget(p, amp=0.3, freq=0.2)
+    list_to_setp(setp, setpList)
+    print("New pose = " + str(setpList))
+
     # send new setpoint
     con.send(setp)
-    watchdog.input_int_register_0 = 1
-    #checksd
+
+    # Calculate the elapsed time for this iteration
+    elapsed_time = time.time() - start_time
+    sleep_time = cycle_time - elapsed_time
+
+    # Sleep for the remaining time to maintain the desired frequency
+    if sleep_time > 0:
+        time.sleep(sleep_time)
+    else:
+        logging.warning("Loop overrun: execution time exceeded cycle time.")
 
 con.send_pause()
-
 con.disconnect()

@@ -4,11 +4,11 @@ import time
 # rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102")
 rtde_c = rtde_control.RTDEControlInterface("192.168.56.102")
 
-targetA = [0.28697383813837185, -0.14998050513491248, 0.6909854580323809, -0.16554934951083813, 1.567441645128796, -0.2602440801528517]
+targetA = [0.28697383813837185, -0.14998050513491248, 0.7509854580323809, -0.16554934951083813, 1.567441645128796, -0.2602440801528517]
 # targetA = [value / 1000 for value in targetA]        
 targetB = targetA.copy()
-targetB[2] = 0.400  # Modify the 4th element of targetB
-rtde_c.moveJ_IK(targetA, 0.25, 0.5, False)
+targetB[2] = 0.300  # Modify the 4th element of targetB
+rtde_c.moveJ_IK(targetA, 0.1, 0.2, False)
 
 try:
     while True:

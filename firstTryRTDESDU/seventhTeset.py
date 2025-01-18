@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-def getSegmentTarget(timestep, limit_min=-0.4499805051349124, limit_max=0.4499805051349124, freq=0.2):
+def getSegmentTarget(timestep, limit_min=-0.4499805051349124, limit_max=0.4499805051349124, freq=1/7):
     """
     Calculates the position along a 1D segment, starting from the middle, oscillating back and forth between two limits.
 
@@ -27,8 +27,8 @@ def getSegmentTarget(timestep, limit_min=-0.4499805051349124, limit_max=0.449980
     return position
 
 # Parameters
-vel = 0.5
-acc = 0.5
+vel = 0.15
+acc = 0.2
 rtde_frequency = 500.0
 dt = 1.0 / rtde_frequency  # 2ms
 flags = rtde_control.RTDEControlInterface.FLAG_VERBOSE | rtde_control.RTDEControlInterface.FLAG_UPLOAD_SCRIPT

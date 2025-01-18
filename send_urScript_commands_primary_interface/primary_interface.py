@@ -1,13 +1,13 @@
 import socket
 
 # initialize variables
-robotIP = "10.54.4.206"
+robotIP = "192.168.56.102"
 PRIMARY_PORT = 30001
 SECONDARY_PORT = 30002
 REALTIME_PORT = 30003
 
 # URScript command being sent to the robot
-urscript_command = "set_payload_mass(2)"
+urscript_command = "movej([0, -2.356, -0.681, 0.785, 0, 0])"
 
 # Creates new line
 new_line = "\n"
