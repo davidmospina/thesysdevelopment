@@ -12,8 +12,8 @@ rtde_c.moveJ_IK(targetA, 0.1, 0.2, False)
 
 try:
     while True:
-        rtde_c.moveL(targetA, 0.25, 0.5, False)
-        rtde_c.moveL(targetB, 0.25, 0.5, False)
+        rtde_c.moveL(targetA, 0.25, 0.5, False) # ACC and VEL and (async = false, does block code until move is finished) 
+        rtde_c.moveL(targetB, 0.25, 0.5, False) 
 
 except KeyboardInterrupt:
     print("Program interrupted by user.")
