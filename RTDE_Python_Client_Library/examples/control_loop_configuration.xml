@@ -5,6 +5,7 @@
 		<field name="target_qd" type="VECTOR6D"/>
 		<field name="output_int_register_0" type="INT32"/>
 		<field name="actual_TCP_pose" type="VECTOR6D"/>
+		<field name="output_int_register_24" type="INT32"/>
 	</recipe>
 	
 	<recipe key="setp">
@@ -14,6 +15,7 @@
 		<field name="input_double_register_3" type="DOUBLE"/>
 		<field name="input_double_register_4" type="DOUBLE"/>
 		<field name="input_double_register_5" type="DOUBLE"/>
+		<field name="input_int_register_24" type="INT32"/>
 	</recipe>
 
 	<recipe key="watchdog">

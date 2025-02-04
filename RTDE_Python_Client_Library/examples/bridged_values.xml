@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<rtde_config>
+	<recipe key="robot_state">
+		<field name="target_q" type="VECTOR6D"/>
+		<field name="target_qd" type="VECTOR6D"/>
+		<field name="actual_TCP_force" type="VECTOR6D"/>
+		<field name="actual_TCP_pose" type="VECTOR6D"/>
+		<field name="output_int_register_24" type="INT32"/>
+	</recipe>
+	
+	<recipe key="tcp_position_partner">
+		<field name="input_double_register_24" type="DOUBLE"/>
+		<field name="input_double_register_25" type="DOUBLE"/>
+		<field name="input_double_register_26" type="DOUBLE"/>
+		<field name="input_double_register_27" type="DOUBLE"/>
+		<field name="input_double_register_28" type="DOUBLE"/>
+		<field name="input_double_register_29" type="DOUBLE"/>
+	</recipe>
+
+	<recipe key="force_torque_sensor_partner">
+		<field name="input_double_register_30" type="DOUBLE"/>
+		<field name="input_double_register_31" type="DOUBLE"/>
+		<field name="input_double_register_32" type="DOUBLE"/>
+		<field name="input_double_register_33" type="DOUBLE"/>
+		<field name="input_double_register_34" type="DOUBLE"/>
+		<field name="input_double_register_35" type="DOUBLE"/>
+	</recipe>
+
+
+	
+	<recipe key="pos_sync">
+		<field name="input_int_register_24" type="INT32"/>
+	</recipe>
+</rtde_config>

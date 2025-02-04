@@ -180,63 +180,38 @@ ax.set_ylabel('Z Coordinate')
 if not con.send_start() or not con2.send_start():
     print("entre")
     sys.exit()
-# p = 0
-# amp = 0.3  # Amplitude
-# T = 30  # Duration of the motion (seconds)
-  # Middle point (usually 0)
-
-# relativeZ = 0  # Initial position (starting at middle point)
-# moving_up = True  # Start moving upwards
 
 
-# Target frequency in Hz
-# frequency = 500
-# cycle_time = 1.0 / frequency
 con.send(setp)
 csv_filename = "motion_data.csv"
 with open(csv_filename, mode='w', newline='') as file:
     writer = csv.writer(file)
     
     # Write the header (optional)
-    writer.writerow(["Time (s)", "Z Position"])
+    writer.writerow(["Time (s)", "Z Position 101", "Z postion 102"],)
 
     try:
         while keep_running:
             start_time = time.time()
-
-            # Update state from robot
-            state = con.receive()
             state2 = con2.receive()
-
-
-            if state is None:
+            state = con.receive()
+            if state2 is None or state is None:
                 break
 
             # Update the plot
-            update()
 
-            # # moving following a sin wave
-            # setpList[2], p = getSegmentTarget(p, amp=0.3, freq=0.1)
-            
-            # moving folowing a linear function
-            # setpList[2] , relativeZ, moving_up = getSegmentTargetConstantSpeed(relativeZ, amp, T, middlePoint, moving_up)
-            
             setpList[2] = state2.actual_TCP_pose[2]
+            z1 = state.actual_TCP_pose[2]
             # print(state2.actual_TCP_pose[2])
+
             list_to_setp(setp, setpList)
 
             # send new setpoint
             con.send(setp)
 
 
-            writer.writerow([start_time, setpList[2]])
+            writer.writerow([start_time, setpList[2], z1])
 
-            # elapsed_time = time.time() - start_time
-            # sleep_time = cycle_time - elapsed_time
-            # if sleep_time > 0:
-            #     time.sleep(sleep_time)
-            # else:
-            #     logging.warning("Loop overrun: execution time exceeded cycle time.")
     except KeyboardInterrupt:
         logging.info("Program interrupted by user.")
     finally:
@@ -248,6 +223,6 @@ with open(csv_filename, mode='w', newline='') as file:
         setp.input_double_register_4 = 0
         setp.input_double_register_5 = 0
         con.send(setp)
-        plt.show()
+        # plt.show()
         con.send_pause()
         con.disconnect()
