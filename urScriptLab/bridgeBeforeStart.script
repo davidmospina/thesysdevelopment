@@ -1,0 +1,18 @@
+global tcpPartner = p[0, 0, 0, 0, 0, 0]
+global ftPartner = p[0, 0, 0, 0, 0, 0]
+global inPosSync = 1
+global go = 0
+write_output_integer_register(24, 0)
+
+while (inPosSync != 0):
+    global inPosSync = read_input_integer_register(24)
+end
+
+movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+write_output_integer_register(24, 1)
+
+while (inPosSync != 1):
+    global inPosSync = read_input_integer_register(24)
+end
+
+sleep(0.1)
