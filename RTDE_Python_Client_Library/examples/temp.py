@@ -23,7 +23,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
-
+import argparse  # Import argparse for command-line arguments
 sys.path.append("..")
 import logging
 import threading
@@ -45,6 +45,8 @@ pos_sync_names, pos_sync_types = conf.get_recipe("pos_sync")
 # Initialize connection variables
 ROBOT_HOST_1 = "192.168.56.101"
 ROBOT_HOST_2 = "192.168.56.102"
+ROBOT_HOST_3 = "10.0.0.3"
+
 ROBOT_PORT = 30004
 PRIMARY_PORT = 30001
 CSV_FILE = "tcp_data.csv"
@@ -87,7 +89,8 @@ def update_state(masterCon, slaveCon, inputsSlave,inputsMaster):
     list_to_float_registers(inputsMaster, slaveFT, forceIndex)
     int_to_int_register(inputsMaster, slaveSyncPosition, syncPosIndex)
 
-
+    # print(masterTCP)
+    # print(slaveTCP)
     slaveCon.send(inputsSlave)
     masterCon.send(inputsMaster)
     keep_running = True
@@ -109,7 +112,7 @@ def collect_and_save_data():
     start_time = time.time()
 
     # Open the CSV file for saving data (use 'a' mode to append)
-    with open(CSV_FILE, mode='a', newline='') as file:  # 'a' mode to append data
+    with open(CSV_FILE, mode='w', newline='') as file:  # 'a' mode to append data
         writer = csv.writer(file)
         writer.writerow(["Timestamp (s)", "Master TCP Y", "Master TCP Z", "Slave TCP Y", "Slave TCP Zzz"])
 
@@ -119,7 +122,9 @@ def collect_and_save_data():
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
                 if masterTCP is not None and slaveTCP is not None:
+                    print([timestamp, masterTCP[1], masterTCP[2], slaveTCP[1], slaveTCP[2]])
                     writer.writerow([timestamp, masterTCP[1], masterTCP[2], slaveTCP[1], slaveTCP[2]])
+                    file.flush()
 
 def plot_tcp_data(file_path):
     # Prepare lists to store data
@@ -129,52 +134,76 @@ def plot_tcp_data(file_path):
     slave_y = []
     slave_z = []
 
-    # Read the CSV file and extract the relevant data
-    with open(file_path, mode='r') as file:
-        reader = csv.reader(file)
-        next(reader)  # Skip the header row
-        for row in reader:
-            timestamps.append(float(row[0]))  # Timestamp (s)
-            master_y.append(float(row[1]))   # Master TCP Y
-            master_z.append(float(row[2]))   # Master TCP Z
-            slave_y.append(float(row[3]))    # Slave TCP Y
-            slave_z.append(float(row[4]))    # Slave TCP Zzz
+    try:
+        # Read the CSV file and extract the relevant data
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            # Check if the file is empty or only has the header
+            first_row = next(reader, None)  # Read the first row (header)
+            if first_row is None:
+                print("CSV file is empty. No data to plot.")
+                return
+            # If there's data, continue reading and parsing it
+            for row in reader:
+                timestamps.append(float(row[0]))  # Timestamp (s)
+                master_y.append(float(row[1]))   # Master TCP Y
+                master_z.append(float(row[2]))   # Master TCP Z
+                slave_y.append(float(row[3]))    # Slave TCP Y
+                slave_z.append(float(row[4]))    # Slave TCP Z
 
-    # Create a figure with two subplots (axes)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+        # Create a figure with two subplots (axes)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Plot Master vs Slave for Y values
-    ax1.plot(timestamps, master_y, label='Master Y', color='blue')
-    ax1.plot(timestamps, slave_y, label='Slave Y', color='red')
-    ax1.set_title("Master vs Slave TCP Y")
-    ax1.set_xlabel("Timestamp (s)")
-    ax1.set_ylabel("TCP Y")
-    ax1.legend()
+        # Plot Master vs Slave for Y values
+        ax1.plot(timestamps, master_y, label='Master Y', color='blue')
+        ax1.plot(timestamps, slave_y, label='Slave Y', color='red')
+        ax1.set_title("Master vs Slave TCP Y")
+        ax1.set_xlabel("Timestamp (s)")
+        ax1.set_ylabel("TCP Y")
+        ax1.legend()
 
-    # Plot Master vs Slave for Z values
-    ax2.plot(timestamps, master_z, label='Master Z', color='blue')
-    ax2.plot(timestamps, slave_z, label='Slave Z', color='red')
-    ax2.set_title("Master vs Slave TCP Z")
-    ax2.set_xlabel("Timestamp (s)")
-    ax2.set_ylabel("TCP Z")
-    ax2.legend()
+        # Plot Master vs Slave for Z values
+        ax2.plot(timestamps, master_z, label='Master Z', color='blue')
+        ax2.plot(timestamps, slave_z, label='Slave Z', color='red')
+        ax2.set_title("Master vs Slave TCP Z")
+        ax2.set_xlabel("Timestamp (s)")
+        ax2.set_ylabel("TCP Z")
+        ax2.legend()
 
-    # Adjust layout for better presentation
-    plt.tight_layout()
+        # Adjust layout for better presentation
+        plt.tight_layout()
 
-    # Show the plots
-    plt.show()
+        # Show the plots
+        plt.show()
+
+    except Exception as e:
+        print(f"Error reading the CSV file: {e}")
 
 # Main execution function
 def main():
+
+    global keep_running 
+        # Argument parser to handle input parameters
+    parser = argparse.ArgumentParser(description="Robot control script")
+    parser.add_argument("robot_type", choices=["virtual", "real"], help="Choose 'virtual' or 'real' for the robot connection")
+    parser.add_argument("--collection", action="store_true", help="Collect and save data to CSV")
+    parser.add_argument("--plot", action="store_true", help="Plot data when interrupted")
+    args = parser.parse_args()
+
+    # Select the correct master connection based on the input parameter
+    if args.robot_type == "real":
+        master_host = ROBOT_HOST_3  # Use ROBOT_HOST_3 for "real"
+    else:
+        master_host = ROBOT_HOST_2  # Use ROBOT_HOST_2 for "virtual"
+        
     try:
         slaveCon = rtde.RTDE(ROBOT_HOST_1, ROBOT_PORT)
         slaveCon.connect()
         print("Connected to Robot 1 successfully.")
         
-        masterCon = rtde.RTDE(ROBOT_HOST_2, ROBOT_PORT)
+        masterCon = rtde.RTDE(master_host, ROBOT_PORT)
         masterCon.connect()
-        print("Connected to Robot 2 successfully.")
+        print(f"Connected to Robot 2 ({args.robot_type}) successfully.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -189,9 +218,10 @@ def main():
     inputsMaster = masterCon.send_input_setup(tcp_names + ft_names + pos_sync_names, tcp_types + ft_types + pos_sync_types)
 
     # Start data collection in a separate thread
-    data_thread = threading.Thread(target=collect_and_save_data)
-    data_thread.daemon = True
-    data_thread.start()
+    if args.collection or args.plot:
+        data_thread = threading.Thread(target=collect_and_save_data)
+        data_thread.daemon = True
+        data_thread.start()
 
     # Main loop to update robot state
     if not slaveCon.send_start() or not masterCon.send_start():
@@ -203,8 +233,16 @@ def main():
             update_state(masterCon, slaveCon, inputsSlave, inputsMaster)
             time.sleep(0.001)  # Add a short delay to avoid overloading the CPU
     except KeyboardInterrupt:
-        print("\nInterrupted! Plotting data...")
-        plot_tcp_data(CSV_FILE)  # Call the plot function when interrupted
+        print("\nInterrupted!")
+
+        keep_running = False
+
+        # Wait for the data collection thread to finish
+        if args.plot or args.plot:
+            data_thread.join()
+        if args.plot:
+            print("\nPlotting data...")
+            plot_tcp_data(CSV_FILE)  # Call the plot function when interrupted
         sys.exit()
 
 if __name__ == "__main__":
