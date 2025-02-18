@@ -1,0 +1,80 @@
+
+#Define syncPos as desired
+global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
+#Initialization of Variables
+global moveTarget = p[0, 0, 0, 0, 0, 0]
+global ftPartner = p[0, 0, 0, 0, 0, 0]
+global inPosSync = 0
+global go = 0
+
+thread Thread_move_target():
+  while (True):
+    global tmpMoveTarget=p[0,0,0,0,0,0]
+    tmpMoveTarget[0] = read_input_float_register(24)
+    tmpMoveTarget[1] = read_input_float_register(25)
+    tmpMoveTarget[2] = read_input_float_register(26)
+    tmpMoveTarget[3] = read_input_float_register(27)
+    tmpMoveTarget[4] = read_input_float_register(28)
+    tmpMoveTarget[5] = read_input_float_register(29)
+    global moveTarget=tmpMoveTarget
+    sync()
+  end
+end
+threadId_Thread_1 = run Thread_move_target()
+
+thread Thread_function_code():
+  
+  while (True):
+    global functionCode=read_input_integer_register(25)
+    sync()
+  end
+end
+threadId_Thread_2 = run Thread_function_code()
+
+write_output_integer_register(24, 1)
+write_output_integer_register(25, 0)
+# popup(inPosSync, "robot is on", False)
+#waiting for partner to turn on  
+while (inPosSync != 1 and inPosSync != 2 ):
+    global inPosSync = read_input_integer_register(24)
+    # popup(inPosSync, "Waiting for partner to be ready. Status:", False)  
+    sleep(7)
+end
+# popup(inPosSync, "I got a 1 or 2 from the other robot", True)
+
+#Moving to sync postion
+movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+write_output_integer_register(24, 2)
+
+#waiting for partner to arrive to sync position
+while (inPosSync != 2):
+    global inPosSync = read_input_integer_register(24)
+end
+sleep(0.5)
+
+
+while (True):
+  startTime = time(mode = 2)
+  #popup(startTime, "time stamp", True)
+  write_output_integer_register(24, 3)
+  global go=read_input_integer_register(24)
+  while (go != 3):
+    go=read_input_integer_register(24)
+  end
+  startTime = time(mode = 2)
+  # popup(startTime, "time stamp", True)
+  while(True):
+    write_output_integer_register(25,0)
+    if functionCode == 10:
+      write_output_integer_register(25,1)
+      a = read_input_float_register(30)
+      v = read_input_float_register(31)
+      t = read_input_float_register(32)
+      r = read_input_float_register(33)
+      #popup([a,v,t,r],[a,v,t,r])
+      movel(moveTarget,a,v,t,r)
+      write_output_integer_register(25,2)
+    end
+  end
+end
+

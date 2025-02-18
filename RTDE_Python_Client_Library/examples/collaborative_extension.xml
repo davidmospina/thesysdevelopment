@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<rtde_config>
+	<recipe key="robot_state">
+		<field name="target_q" type="VECTOR6D"/>
+		<field name="target_qd" type="VECTOR6D"/>
+		<field name="actual_TCP_force" type="VECTOR6D"/>
+		<field name="actual_TCP_pose" type="VECTOR6D"/>
+		<!-- sync initial handshake -->
+		<field name="output_int_register_24" type="INT32"/>
+		<!-- function code: master/code follower/status command -->
+		<field name="output_int_register_25" type="INT32"/>
+	</recipe>
+	
+	<recipe key="function_parameters_follower_in">
+		<!-- joint or pose values for a target -->
+		<field name="input_double_register_24" type="DOUBLE"/>
+		<field name="input_double_register_25" type="DOUBLE"/>
+		<field name="input_double_register_26" type="DOUBLE"/>
+		<field name="input_double_register_27" type="DOUBLE"/>
+		<field name="input_double_register_28" type="DOUBLE"/>
+		<field name="input_double_register_29" type="DOUBLE"/>
+		<!-- force torque values for a target-->
+		<!-- <field name="input_double_register_36" type="DOUBLE"/>
+		<field name="input_double_register_37" type="DOUBLE"/>
+		<field name="input_double_register_38" type="DOUBLE"/>
+		<field name="input_double_register_39" type="DOUBLE"/>
+		<field name="input_double_register_40" type="DOUBLE"/>
+		<field name="input_double_register_41" type="DOUBLE"/> -->
+
+		<!-- aceleration, velocity, time, blend radius -->
+		<field name="input_double_register_30" type="DOUBLE"/>
+		<field name="input_double_register_31" type="DOUBLE"/>
+		<field name="input_double_register_32" type="DOUBLE"/>
+		<field name="input_double_register_33" type="DOUBLE"/>
+	</recipe>
+
+	<recipe key="function_parameters_master_out">
+		<!-- joint or pose values for a target -->
+		<field name="output_double_register_24" type="DOUBLE"/>
+		<field name="output_double_register_25" type="DOUBLE"/>
+		<field name="output_double_register_26" type="DOUBLE"/>
+		<field name="output_double_register_27" type="DOUBLE"/>
+		<field name="output_double_register_28" type="DOUBLE"/>
+		<field name="output_double_register_29" type="DOUBLE"/>
+		<!-- force torque values for a target-->
+		<!-- <field name="output_double_register_36" type="DOUBLE"/>
+		<field name="output_double_register_37" type="DOUBLE"/>
+		<field name="output_double_register_38" type="DOUBLE"/>
+		<field name="output_double_register_39" type="DOUBLE"/>
+		<field name="output_double_register_40" type="DOUBLE"/>
+		<field name="output_double_register_41" type="DOUBLE"/> -->
+
+		<!-- aceleration, velocity, time, blend radius -->
+		<field name="output_double_register_30" type="DOUBLE"/>
+		<field name="output_double_register_31" type="DOUBLE"/>
+		<field name="output_double_register_32" type="DOUBLE"/>
+		<field name="output_double_register_33" type="DOUBLE"/>
+	</recipe>
+
+
+
+
+	
+	<recipe key="sync">
+		<!-- sync initial handshake -->
+		<field name="input_int_register_24" type="INT32"/>
+		<!-- function code: master/code follower/status command -->
+		<field name="input_int_register_25" type="INT32"/>
+
+	</recipe>
+</rtde_config>
