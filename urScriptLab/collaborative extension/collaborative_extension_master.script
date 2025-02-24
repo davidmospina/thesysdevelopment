@@ -12,14 +12,20 @@ global functionStatus = 0
 def movelPartner(pose, a=1.2, v=0.25, t=0, r=0):
  # popup([a,v,t,r],[a,v,t,r])
   write_output_integer_register(25, 10)
+  while (functionStatus != 1):  # Wait for acknowledgment
+    functionStatus = read_input_integer_register(25)
+  end
   write_target(pose)
   write_output_float_register(30,a)
   write_output_float_register(31,v)
   write_output_float_register(32,t)
   write_output_float_register(33,r)
   while(functionStatus != 2 ):
-    functionStatus = read_input_integer_register(24)
+    hile (functionStatus != 2):  # Wait for execution completion
+    functionStatus = read_input_integer_register(25)
   end
+
+  write_output_integer_register(25, 0)
 end
 
 
@@ -64,11 +70,32 @@ while (True):
   end
   # startTime = time(mode = 2)
   # popup(startTime, "time stamp", True)
+
+  moveN = 0
   movel(pose)
+  popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
   movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
-  pose[2] = pose[2] + 10
+  popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+  pose[2] = pose[2] + 0.1
   movel(pose)
+  popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
   movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
-  pose[2] = pose[2] - 10
+  popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+  pose[1] = pose[1] + 0.1
+  movel(pose)
+  popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
+  popup("follwer performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+  pose[2] = pose[2] - 0.1
+  movel(pose)
+  popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
+  popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+  pose[1] = pose[1] - 0.1
+ 
 end
 

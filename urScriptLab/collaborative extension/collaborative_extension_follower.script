@@ -73,7 +73,13 @@ while (True):
       r = read_input_float_register(33)
       #popup([a,v,t,r],[a,v,t,r])
       movel(moveTarget,a,v,t,r)
-      write_output_integer_register(25,2)
+      # popup("moved", "status", blocking = True)
+      write_output_integer_register(25, 2)  # Step 2: Indicate completion
+      while(read_input_integer_register(25) != 0):  # Step 3: Wait for Master reset
+        sleep(0.1)
+      end
+      sync()
+      # popup("register written", "status", blocking = True)
     end
   end
 end

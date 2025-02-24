@@ -85,6 +85,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         followerFT= stateFollower.actual_TCP_force
         followerSyncPosition = stateFollower.output_int_register_24
         followerFunctionStatus = stateFollower.output_int_register_25
+        print("This is the status function " + str(followerFunctionStatus))
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
@@ -132,7 +133,7 @@ def collect_and_save_data():
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
                 if masterTCPArray is not None and followerTCP is not None:
-                    print([timestamp, masterTCPArray[1], masterTCPArray[2], followerTCP[1], followerTCP[2]])
+                    # print([timestamp, masterTCPArray[1], masterTCPArray[2], followerTCP[1], followerTCP[2]])
                     writer.writerow([timestamp, masterTCPArray[1], masterTCPArray[2], followerTCP[1], followerTCP[2]])
                     file.flush()
 
@@ -171,6 +172,7 @@ def plot_tcp_data(file_path):
         ax1.set_xlabel("Timestamp (s)")
         ax1.set_ylabel("TCP Y")
         ax1.legend()
+        ax1.grid(True)
 
         # Plot Master vs Follower for Z values
         ax2.plot(timestamps, master_z, label='Master Z', color='blue')
@@ -179,6 +181,7 @@ def plot_tcp_data(file_path):
         ax2.set_xlabel("Timestamp (s)")
         ax2.set_ylabel("TCP Z")
         ax2.legend()
+        ax2.grid(True)
 
         # Adjust layout for better presentation
         plt.tight_layout()

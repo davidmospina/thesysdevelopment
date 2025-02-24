@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ursim3:
+    image: universalrobots/ursim_e-series
+    container_name: ursim3
+    environment:
+      - ROBOT_MODEL=UR3
+    networks:
+      ursim_net:
+        ipv4_address: 192.168.57.109
+    volumes:
+      - ${HOME}/.ursim/urcaps:/urcaps
+      - ${HOME}/.ursim/programs:/ursim/programs
+    tty: true
+    stdin_open: true
+
+  ursim2:
+    image: universalrobots/ursim_e-series
+    container_name: ursim2
+    environment:
+      - ROBOT_MODEL=UR3
+    networks:
+      ursim_net:
+        ipv4_address: 192.168.57.108
+    volumes:
+      - ${HOME}/.ursim/urcaps:/urcaps
+      - ${HOME}/.ursim/programs:/ursim/programs
+    tty: true
+    stdin_open: true
+
+networks:
+  ursim_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.57.0/24
+
