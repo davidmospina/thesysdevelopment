@@ -2,15 +2,15 @@ import socket
 
 # initialize variables
 # robotIP = "192.168.56.101"
-robotIP = "127.0.0.1"
+robotIP = "192.168.56.102"
 PRIMARY_PORT = 30001
 SECONDARY_PORT = 30002
 REALTIME_PORT = 30003
 DASHBOARD_PROT = 29999
 # URScript command being sent to the robot
-urscript_command = "movej([0, 0, 0, 0, 0, 0])"
+urscript_command = "start"
 
-popup = "hola pol"
+popup = "play"
 
 # Creates new line
 new_line = "\n"
@@ -73,5 +73,5 @@ def send_command_dashboard(command: str):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-send_urscript_command(urscript_command)
-# send_command_dashboard(popup)
+# send_urscript_command(urscript_command)
+send_command_dashboard(popup)
