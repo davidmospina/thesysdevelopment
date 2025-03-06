@@ -33,6 +33,8 @@ import socket
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
 import pprint
 
 # Initialize logging and configurations
@@ -44,11 +46,10 @@ function_parameters_master_out_names, function_parameters_master_out_types = con
 sync_names, sync_types = conf.get_recipe("sync")
 
 # Initialize connection variables
-# ROBOT_HOST_1 = "192.168.56.101"
-ROBOT_HOST_1 = "10.0.0.2"
+ROBOT_HOST_1 = "192.168.56.101"
 ROBOT_HOST_2 = "192.168.56.102"
 ROBOT_HOST_3 = "10.0.0.3"
-
+ROBOT_HOST_4 = "10.0.0.2"
 ROBOT_PORT = 30004
 PRIMARY_PORT = 30001
 CSV_FILE = "tcp_data.csv"
@@ -150,20 +151,19 @@ def plot_tcp_data(file_path):
         # Read the CSV file and extract the relevant data
         with open(file_path, mode='r') as file:
             reader = csv.reader(file)
-            # Check if the file is empty or only has the header
             first_row = next(reader, None)  # Read the first row (header)
             if first_row is None:
                 print("CSV file is empty. No data to plot.")
                 return
-            # If there's data, continue reading and parsing it
+            
             for row in reader:
                 timestamps.append(float(row[0]))  # Timestamp (s)
                 master_y.append(float(row[1]))   # Master TCP Y
                 master_z.append(float(row[2]))   # Master TCP Z
-                follower_y.append(float(row[3]))    # Follower TCP Y
-                follower_z.append(float(row[4]))    # Follower TCP Z
+                follower_y.append(float(row[3])) # Follower TCP Y
+                follower_z.append(float(row[4])) # Follower TCP Z
 
-        # Create a figure with two subplots (axes)
+        # Create a figure with two subplots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
         # Plot Master vs Follower for Y values
@@ -173,7 +173,10 @@ def plot_tcp_data(file_path):
         ax1.set_xlabel("Timestamp (s)")
         ax1.set_ylabel("TCP Y")
         ax1.legend()
-        ax1.grid(True)
+        ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+        # Set grid line spacing to 1 second
+        ax1.xaxis.set_major_locator(ticker.MultipleLocator(1))  
 
         # Plot Master vs Follower for Z values
         ax2.plot(timestamps, master_z, label='Master Z', color='blue')
@@ -182,7 +185,10 @@ def plot_tcp_data(file_path):
         ax2.set_xlabel("Timestamp (s)")
         ax2.set_ylabel("TCP Z")
         ax2.legend()
-        ax2.grid(True)
+        ax2.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+        # Set grid line spacing to 1 second
+        ax2.xaxis.set_major_locator(ticker.MultipleLocator(1))  
 
         # Adjust layout for better presentation
         plt.tight_layout()
@@ -191,7 +197,7 @@ def plot_tcp_data(file_path):
         plt.show()
 
     except Exception as e:
-        print(f"Error reading the CSV file: {e}")
+        print(f"Error: {e}")
 
 # Main execution function
 def main():
@@ -207,11 +213,13 @@ def main():
     # Select the correct master connection based on the input parameter
     if args.robot_type == "real":
         master_host = ROBOT_HOST_3  # Use ROBOT_HOST_3 for "real"
+        follower_host = ROBOT_HOST_4
     else:
         master_host = ROBOT_HOST_2  # Use ROBOT_HOST_2 for "virtual"
+        follower_host = ROBOT_HOST_1
         
     try:
-        followerCon = rtde.RTDE(ROBOT_HOST_1, ROBOT_PORT)
+        followerCon = rtde.RTDE(follower_host, ROBOT_PORT)
         followerCon.connect()
         print("Connected to Robot 1 successfully.")
         
