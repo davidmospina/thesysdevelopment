@@ -45,17 +45,16 @@ while (True):
   startTime = time(mode = 2)
   #popup(startTime, "time stamp", True)
   while(True):
+    sync()
     write_output_integer_register(25,1)
     if functionCode == 10:
-      write_output_integer_register(25,2)
       a = read_input_float_register(30)
       v = read_input_float_register(31)
       t = read_input_float_register(32)
       r = read_input_float_register(33)
       read_target()
       movel(moveTarget,a,v,t,r)
-      write_output_integer_register(25,1)
-      sync()
+      write_output_integer_register(25,2)
     end    
   end
 end

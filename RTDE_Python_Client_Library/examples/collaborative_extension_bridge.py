@@ -44,7 +44,8 @@ function_parameters_master_out_names, function_parameters_master_out_types = con
 sync_names, sync_types = conf.get_recipe("sync")
 
 # Initialize connection variables
-ROBOT_HOST_1 = "192.168.56.101"
+# ROBOT_HOST_1 = "192.168.56.101"
+ROBOT_HOST_1 = "10.0.0.2"
 ROBOT_HOST_2 = "192.168.56.102"
 ROBOT_HOST_3 = "10.0.0.3"
 

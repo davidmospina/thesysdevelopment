@@ -16,6 +16,7 @@ def movelPartner(pose, a=1.3, v=0.26, t=0, r=0):
   write_output_float_register(31,v)
   write_output_float_register(32,t)
   write_output_float_register(33,r)
+  #sync()
   global robotStatus = read_input_integer_register(25)
   while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
     global robotStatus = read_input_integer_register(25)
