@@ -235,12 +235,12 @@ def main():
 
 
     # setup recipes
-    followerCon.send_output_setup(state_names, state_types)
+    followerCon.send_output_setup(state_names + sync_names, state_types + sync_types)
     inputsFollower = followerCon.send_input_setup(function_parameters_follower_in_names + sync_names, function_parameters_follower_in_types + sync_types)
 
 
     # setup recipes
-    masterCon.send_output_setup(state_names + function_parameters_master_out_names, state_types + function_parameters_master_out_types)
+    masterCon.send_output_setup(state_names + function_parameters_master_out_names + sync_names, state_types + function_parameters_master_out_types + sync_types)
     inputsMaster = masterCon.send_input_setup(sync_names, sync_types)
 
     # Start data collection in a separate thread
@@ -254,6 +254,8 @@ def main():
         
         sys.exit()
 
+    
+
     try:
         while keep_running:
             update_state(masterCon, followerCon, inputsFollower, inputsMaster)
@@ -262,6 +264,24 @@ def main():
         print("\nInterrupted!")
 
         keep_running = False
+
+        #CLEANUP PHASE + DEBUGGING 
+        inputsMaster.input_int_register_24 = 0
+        masterCon.send(inputsMaster)  
+        inputsFollower.input_int_register_24 = 0
+        followerCon.send(inputsFollower)  
+
+        time.sleep(0.01) #allow time to actually change registers
+
+        stateMaster = masterCon.receive()
+        stateFollower = followerCon.receive()
+        #Print registers status on program exit:
+        print(f"Master final value of input_int_register_24: {stateMaster.input_int_register_24}")
+        print(f"Master final value of input_int_register_25: {stateMaster.input_int_register_25}")
+        print(f"Follower final value of input_int_register_24: {stateFollower.input_int_register_24}")
+        print(f"Follower final value of input_int_register_25: {stateFollower.input_int_register_25}")
+
+             
 
         # Wait for the data collection thread to finish
         if args.plot or args.plot:
