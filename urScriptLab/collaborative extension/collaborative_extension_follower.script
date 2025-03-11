@@ -49,7 +49,7 @@ while (True):
       t = read_input_float_register(32)
       r = read_input_float_register(33)
       read_target()
-      movel(moveTarget,a,v,t,r)
+      movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
       write_output_integer_register(25,2)
     elif functionCode == 11:
       a = read_input_float_register(30)

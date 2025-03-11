@@ -92,7 +92,27 @@ while (True):
   movejPartner(q, a=1.3, v=0.26, t=0, r=0)
   # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
   moveN = moveN + 1
+
+  movel(pose)
+  # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+  # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+
+  pose[2] = pose[2] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+  
+  pose[1] = pose[1] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+
+  pose[2] = pose[2] - 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+ 
   pose[1] = pose[1] - 0.1
+  
   sync()
 end
 
