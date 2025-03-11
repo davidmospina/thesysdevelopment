@@ -1,0 +1,180 @@
+def test_base_bridgeC():
+  global _hidden_verificationVariable=0
+  step_count_e8d4e61d_f2e1_412f_90ef_e61bccfbfb70 = 0.0
+  thread Step_Counter_Thread_56e424d6_4278_46b6_9ccf_5f67228e0e92():
+    while (True):
+      step_count_e8d4e61d_f2e1_412f_90ef_e61bccfbfb70 = step_count_e8d4e61d_f2e1_412f_90ef_e61bccfbfb70 + 1.0
+      sync()
+    end
+  end
+  run Step_Counter_Thread_56e424d6_4278_46b6_9ccf_5f67228e0e92()
+  set_standard_analog_input_domain(0, 1)
+  set_standard_analog_input_domain(1, 1)
+  set_tool_analog_input_domain(0, 1)
+  set_tool_analog_input_domain(1, 1)
+  set_analog_outputdomain(0, 0)
+  set_analog_outputdomain(1, 0)
+  set_input_actions_to_default()
+  set_gravity([0.0, 0.0, 9.82])
+  set_target_payload(0.100000, [0.000000, 0.000000, 0.000000], [0.000033, 0.000033, 0.000033, 0.000000, 0.000000, 0.000000])
+  set_tcp(p[0.0,0.0,0.0,0.0,0.0,0.0])
+  set_tool_communication(False, 115200, 0, 1, 1.5, 3.5)
+  set_tool_output_mode(0)
+  set_tool_digital_output_mode(0, 1)
+  set_tool_digital_output_mode(1, 1)
+  set_tool_voltage(0)
+  set_safety_mode_transition_hardness(1)
+  global Line_1=p[-0.1439686567031396,-0.4,0.3475723388964104,-1.9184816094202377,-1.9821021131281942,0.4537648000696526]
+  # begin: URCap Installation Node
+  #   Source: External Control, 1.0.5, FZI Research Center for Information Technology
+  #   Type: External Control
+  # end: URCap Installation Node
+  $ 2 "BeforeStart"
+  $ 3 "syncPos≔p[0,1.6,2.25,0,1.57,0]"
+  global syncPos=p[0,1.6,2.25,0,1.57,0]
+  $ 4 "Script: addFunctons.script"
+  global p=0
+  global theta = 1.57
+  global r = 0.1
+  global f = 0.2
+  
+  global syncPos = p[0.452,0.13834,0.6810,2.389,-2.494,2.141]
+  def cPose(p,theta,r,f):
+      p = p + f*(2*3.1415/500)
+      z = r*sin(theta + p )
+      y = r*cos(theta + p )
+  return [y,z,p]
+  
+  end
+  def addTrackedTcp(x,y,z):
+      x = tcpPartner[0] + x
+      y = tcpPartner[1] + y
+      z = tcpPartner[2] + z
+  return [x,y,z]
+  end
+  
+  def addTrackedTcp2(x,y,z):
+      mypose =  get_actual_tcp_pose()
+      x = mypose[0] + x
+      y = mypose[1] + y
+      z = mypose[2] + z
+      global original_tpc = mypose
+  return [x,y,z,mypose[3],mypose[4],mypose[5]]
+  end
+  
+  def moveNext():
+      pos_p = cPose(p,theta,r,f)
+      # popup(pos_p,"c pose",blocking = True)
+      p = pos_p[2]
+      global nextPosition = addTrackedTcp(0,pos_p[0], pos_p[1])
+      # popup(nextPosition,"position",blocking = False)
+      q = get_inverse_kin(p[nextPosition[0],nextPosition[1],nextPosition[2],tcpPartner[3],tcpPartner[4],tcpPartner[5]])
+      servoj(q,0.5,500)
+  end
+  
+  def moveFromAtoB(center):
+      pointA = center
+      pointB = center
+      pointA[1] = pointA[1] + 0.4
+      pointB[1] = pointB[1] - 0.4
+      movel(pointA,v = 0.130)
+      movel(pointB)
+  end
+  def movejOffset(point,x,y,z):
+      point[0] = point[0] + x
+      point[1] = point[1] + y
+      point[2] = point[2] + z
+      movej(point)
+  end
+  $ 5 "Script: bridgeBeforeStart.script"
+  global tcpPartner = p[0, 0, 0, 0, 0, 0]
+  global ftPartner = p[0, 0, 0, 0, 0, 0]
+  global inPosSync = 1
+  global go = 0
+  write_output_integer_register(24, 0)
+  
+  while (inPosSync != 0):
+      global inPosSync = read_input_integer_register(24)
+  end
+  
+  popup("entered","entered")
+  movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+  write_output_integer_register(24, 1)
+  
+  while (inPosSync != 1):
+      global inPosSync = read_input_integer_register(24)
+  end
+  
+  sleep(0.1)
+  $ 13 "Thread_1"
+  thread Thread_1():
+    while (True):
+      $ 14 "Loop"
+      while (True):
+        $ 15 "tmpTcp≔p[0,0,0,0,0,0]"
+        global tmpTcp=p[0,0,0,0,0,0]
+        $ 16 "tmpTcp[0] = read_input_float_register(24)"
+        tmpTcp[0] = read_input_float_register(24)
+        $ 17 "tmpTcp[1] = read_input_float_register(25)"
+        tmpTcp[1] = read_input_float_register(25)
+        $ 18 "tmpTcp[2] = read_input_float_register(26)"
+        tmpTcp[2] = read_input_float_register(26)
+        $ 19 "tmpTcp[3] = read_input_float_register(27)"
+        tmpTcp[3] = read_input_float_register(27)
+        $ 20 "tmpTcp[4] = read_input_float_register(28)"
+        tmpTcp[4] = read_input_float_register(28)
+        $ 21 "tmpTcp[5] = read_input_float_register(29)"
+        tmpTcp[5] = read_input_float_register(29)
+        $ 22 "tcpPartner≔tmpTcp"
+        global tcpPartner=tmpTcp
+        $ 23 "sync()"
+        sync()
+      end
+    end
+  end
+  threadId_Thread_1 = run Thread_1()
+  $ 24 "Thread_2"
+  thread Thread_2():
+    while (True):
+      $ 25 "Loop"
+      while (True):
+        $ 26 "tmp≔p[0,0,0,0,0,0]"
+        global tmp=p[0,0,0,0,0,0]
+        $ 27 "tmp[0] = read_input_float_register(30)"
+        tmp[0] = read_input_float_register(30)
+        $ 28 "tmp[1] = read_input_float_register(31)"
+        tmp[1] = read_input_float_register(31)
+        $ 29 "tmp[2] = read_input_float_register(32)"
+        tmp[2] = read_input_float_register(32)
+        $ 30 "tmp[3] = read_input_float_register(33)"
+        tmp[3] = read_input_float_register(33)
+        $ 31 "tmp[4] = read_input_float_register(34)"
+        tmp[4] = read_input_float_register(34)
+        $ 32 "tmp[5] = read_input_float_register(35)"
+        tmp[5] = read_input_float_register(35)
+        $ 33 "ftPartner≔tmp"
+        global ftPartner=tmp
+        $ 34 "sync()"
+        sync()
+      end
+    end
+  end
+  threadId_Thread_2 = run Thread_2()
+  while (True):
+    $ 6 "Robot Program"
+    $ 7 "startTime = time(mode = 2)"
+    startTime = time(mode = 2)
+    $ 8 "write_output_integer_register(24, 2)"
+    write_output_integer_register(24, 2)
+    $ 9 "go≔read_input_integer_register(24)"
+    global go=read_input_integer_register(24)
+    $ 10 "If go ≟2"
+    if (go  == 2):
+      $ 11 "Loop"
+      while (True):
+        $ 12 "moveFromAtoB(syncPos)"
+        moveFromAtoB(syncPos)
+      end
+    end
+  end
+end

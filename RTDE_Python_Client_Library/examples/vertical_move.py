@@ -106,7 +106,7 @@ while keep_running:
         break
 
     # do something...
-    setpList[2], p = getSegmentTarget(p, amp=0.3, freq=0.2)
+    setpList[2], p = getSegmentTarget(p, amp=0.3, freq=0.1)
     list_to_setp(setp, setpList)
     print("New pose = " + str(setpList))
 

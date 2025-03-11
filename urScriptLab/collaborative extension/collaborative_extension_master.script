@@ -1,0 +1,74 @@
+
+#Define syncPos as desired
+global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
+#Initialization of Variables
+global moveTarget = p[0, 0, 0, 0, 0, 0]
+global ftPartner = p[0, 0, 0, 0, 0, 0]
+global inPosSync = 0
+global pose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
+
+#function status: 0 - no function / 1 - function received / 2 - function perform 
+def movelPartner(pose, a=1.3, v=0.26, t=0, r=0):
+ # popup([a,v,t,r],[a,v,t,r])
+  write_output_integer_register(25, 10) #send function code
+  write_target(pose)
+  write_output_float_register(30,a)
+  write_output_float_register(31,v)
+  write_output_float_register(32,t)
+  write_output_float_register(33,r)
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+
+def write_target(target):
+  write_output_float_register(24,target[0])
+  write_output_float_register(25,target[1])
+  write_output_float_register(26,target[2])
+  write_output_float_register(27,target[3])
+  write_output_float_register(28,target[4])
+  write_output_float_register(29,target[5])
+end
+
+write_output_integer_register(24, 0)
+write_output_integer_register(25, 0)
+
+movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+write_output_integer_register(24, 2)
+
+while (inPosSync != 2):
+    global inPosSync = read_input_integer_register(24)
+end
+sync()
+
+
+while (True):
+  startTime = time(mode = 2)
+  # popup(startTime, "time stamp", True)
+  moveN = 0
+  
+  movel(pose)
+  # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+  # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
+  moveN = moveN + 1
+
+  pose[2] = pose[2] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+  
+  pose[1] = pose[1] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+
+  pose[2] = pose[2] - 0.1
+  movel(pose)
+  movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+ 
+  pose[1] = pose[1] - 0.1
+  sync()
+end
+
