@@ -2,13 +2,13 @@
 #Define syncPos as desired
 global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
 #Initialization of Variables
-global moveTarget = p[0, 0, 0, 0, 0, 0]
+global moveTarget = [0, 0, 0, 0, 0, 0]
 global ftPartner = p[0, 0, 0, 0, 0, 0]
 global inPosSync = 0
 global functionCode = 0
 
 def read_target():
-    tmpMoveTarget=p[0,0,0,0,0,0]
+    tmpMoveTarget=[0,0,0,0,0,0]
     tmpMoveTarget[0] = read_input_float_register(24)
     tmpMoveTarget[1] = read_input_float_register(25)
     tmpMoveTarget[2] = read_input_float_register(26)
@@ -49,7 +49,15 @@ while (True):
       t = read_input_float_register(32)
       r = read_input_float_register(33)
       read_target()
-      movel(moveTarget,a,v,t,r)
+      movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
+      write_output_integer_register(25,2)
+    elif functionCode == 11:
+      a = read_input_float_register(30)
+      v = read_input_float_register(31)
+      t = read_input_float_register(32)
+      r = read_input_float_register(33)
+      read_target()
+      movej(moveTarget,a,v,t,r)    
       write_output_integer_register(25,2)
     end    
   end
