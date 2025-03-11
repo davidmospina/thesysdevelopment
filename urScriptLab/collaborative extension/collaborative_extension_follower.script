@@ -31,19 +31,15 @@ write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
 
 movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
-# popup("moved to sync pos","status")
 
 while (inPosSync != 2 ):
     global inPosSync = read_input_integer_register(24)
 end
 write_output_integer_register(24, 2)
 sync()
-# popup("partner moved to sync pos","status")
 
 while (True):
-  #write_output_integer_register(24, 1)
   startTime = time(mode = 2)
-  #popup(startTime, "time stamp", True)
   while(True):
     sync()
     write_output_integer_register(25,1)
