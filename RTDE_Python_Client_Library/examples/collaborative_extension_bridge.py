@@ -32,9 +32,11 @@ import csv
 import socket
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
+import matplotlib
+matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-
 import pprint
 
 # Initialize logging and configurations
@@ -277,9 +279,9 @@ def main():
         stateFollower = followerCon.receive()
         #Print registers status on program exit:
         print(f"Master final value of input_int_register_24: {stateMaster.input_int_register_24}")
-        print(f"Master final value of input_int_register_25: {stateMaster.input_int_register_25}")
+        #print(f"Master final value of input_int_register_25: {stateMaster.input_int_register_25}")
         print(f"Follower final value of input_int_register_24: {stateFollower.input_int_register_24}")
-        print(f"Follower final value of input_int_register_25: {stateFollower.input_int_register_25}")
+        #print(f"Follower final value of input_int_register_25: {stateFollower.input_int_register_25}")
 
              
 
