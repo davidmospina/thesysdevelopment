@@ -89,7 +89,6 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         followerFT= stateFollower.actual_TCP_force
         followerSyncPosition = stateFollower.output_int_register_24
         followerFunctionStatus = stateFollower.output_int_register_25
-        # print("This is the status function " + str(followerFunctionStatus))
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)

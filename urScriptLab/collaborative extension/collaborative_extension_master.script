@@ -24,7 +24,7 @@ def movelPartner(pose, a=1.2, v=0.25, t=0, r=0):
   write_output_integer_register(25, 0)
 end
 
-def movejPartner(q, a=1.4, v=1.05, t=0, r=0): #a=1.3, v=0.26
+def movejPartner(q, a=1.3, v=0.26, t=0, r=0):
   # popup([a,v,t,r],[a,v,t,r])
    write_output_integer_register(25, 11) #send function code
    write_target(q)
