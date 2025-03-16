@@ -41,7 +41,6 @@ sync()
 while (True):
   startTime = time(mode = 2)
   while(True):
-    sync()
     write_output_integer_register(25,1)
     if functionCode == 10:
       a = read_input_float_register(30)
@@ -59,6 +58,17 @@ while (True):
       read_target()
       movej(moveTarget,a,v,t,r)    
       write_output_integer_register(25,2)
-    end    
+    elif functionCode == 12:
+      a = read_input_float_register(30)
+      v = read_input_float_register(31)
+      t = read_input_float_register(32)
+      lookahead_time = read_input_float_register(33)
+      gain = read_input_float_register(34)
+      read_target()
+      servoj(moveTarget,a,v,t,lookahead_time,gain)
+      popup("entered in servoj ", "status")    
+      write_output_integer_register(25,2)
+    end
+    sync()   
   end
 end
