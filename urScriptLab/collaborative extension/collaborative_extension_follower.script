@@ -5,7 +5,10 @@ global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(
 global moveTarget = [0, 0, 0, 0, 0, 0]
 global ftPartner = p[0, 0, 0, 0, 0, 0]
 global inPosSync = 0
-global functionCode = 0
+# global functionCode = 0
+
+# def procress_function_code(functionCode):
+#   if functionCode == 10 or functionCode == 11
 
 def read_target():
     tmpMoveTarget=[0,0,0,0,0,0]
@@ -18,14 +21,14 @@ def read_target():
     global moveTarget=tmpMoveTarget
 end
 
-thread Thread_function_code():
+# thread Thread_function_code():
   
-  while (True):
-    global functionCode=read_input_integer_register(25)
-    sync()
-  end
-end
-threadId_Thread_2 = run Thread_function_code()
+#   while (True):
+#     global functionCode=read_input_integer_register(25)
+#     sync()
+#   end
+# end
+# threadId_Thread_2 = run Thread_function_code()
 
 write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
@@ -42,12 +45,14 @@ while (True):
   startTime = time(mode = 2)
   while(True):
     write_output_integer_register(25,1)
+    functionCode = read_input_integer_register(25)
     if functionCode == 10:
       a = read_input_float_register(30)
       v = read_input_float_register(31)
       t = read_input_float_register(32)
       r = read_input_float_register(33)
       read_target()
+      # popup("v: " + to_str(v) + " ,a: " + to_str(a), "state", blocking = True)
       movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
       write_output_integer_register(25,2)
     elif functionCode == 11:
@@ -65,8 +70,10 @@ while (True):
       lookahead_time = read_input_float_register(33)
       gain = read_input_float_register(34)
       read_target()
+      # popup([a,v,t,r],[a,v,t,lookahead_time,gain])
       servoj(moveTarget,a,v,t,lookahead_time,gain)
-      popup("entered in servoj ", "status")    
+      # servoj(qNext,0,0, 0.001,0.1, gain=900)
+      # popup("entered in servoj ", "status")    
       write_output_integer_register(25,2)
     end
     sync()   

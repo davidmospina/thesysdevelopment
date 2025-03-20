@@ -1,0 +1,22 @@
+A=0.10
+pose = get_actual_tcp_pose()
+w=2*3.1416/20
+
+poseInit = pose
+poseInit[0] = poseInit[0] + A
+movel(poseInit)
+# popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+movelPartner(poseInit, a=1.3, v=0.26, t=0, r=0)
+# popup("after poseInit", "status", blocking = True)
+# thread move_partnerThread(): partnerThread() end
+# thrd = run move_partnerThread()
+while (p<=6.283):
+p = p + w/500
+deltaZ = A*sin(p)
+deltaX = A*cos(p)
+# popup("deltaZ: " + to_str(deltaZ) + " deltaX: " + to_str(deltaX) , "status", blocking = True)
+poseNext = p[0.079 + deltaX , -0.278, 0.189 + deltaZ ,0.0, 3.16, 0.04]
+qNext = get_inverse_kin(poseNext)
+servoj(qNext,0,0, 0.002,0.1, gain=1500)
+sync()
+end

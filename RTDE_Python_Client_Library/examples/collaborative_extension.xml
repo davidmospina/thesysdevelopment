@@ -32,6 +32,8 @@
 		<field name="input_double_register_31" type="DOUBLE"/>
 		<field name="input_double_register_32" type="DOUBLE"/>
 		<field name="input_double_register_33" type="DOUBLE"/>
+		<field name="input_double_register_34" type="DOUBLE"/>
+		<field name="input_double_register_35" type="DOUBLE"/>
 	</recipe>
 
 	<recipe key="function_parameters_master_out">
@@ -55,6 +57,8 @@
 		<field name="output_double_register_31" type="DOUBLE"/>
 		<field name="output_double_register_32" type="DOUBLE"/>
 		<field name="output_double_register_33" type="DOUBLE"/>
+		<field name="output_double_register_34" type="DOUBLE"/>
+		<field name="output_double_register_35" type="DOUBLE"/>
 	</recipe>
 
 

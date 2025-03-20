@@ -90,7 +90,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
-    master_to_follower_registers(24,33,inputsFollower,stateMaster)
+    master_to_follower_registers(24,35,inputsFollower,stateMaster)
     
     int_to_int_register(inputsMaster, followerSyncPosition, syncPosIndex)
     int_to_int_register(inputsMaster, followerFunctionStatus, functionIndex)
@@ -123,10 +123,10 @@ def collect_and_save_data():
     global keep_running, masterTCPArray, followerTCP
     start_time = time.time()
 
-    # Open the CSV file for saving data (use 'a' mode to append)
-    with open(CSV_FILE, mode='w', newline='') as file:  # 'a' mode to append data
+    # Open the CSV file for saving data (use 'w' mode to write)
+    with open(CSV_FILE, mode='w', newline='') as file:  # 'w' mode to overwrite existing data
         writer = csv.writer(file)
-        writer.writerow(["Timestamp (s)", "Master TCP Y", "Master TCP Z", "Follower TCP Y", "Follower TCP Zzz"])
+        writer.writerow(["Timestamp (s)", "Master TCP X", "Master TCP Y", "Master TCP Z", "Follower TCP X", "Follower TCP Y", "Follower TCP Z"])
 
         while keep_running:
             time.sleep(0.5)  # Wait for 0.5 seconds
@@ -134,15 +134,16 @@ def collect_and_save_data():
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
                 if masterTCPArray is not None and followerTCP is not None:
-                    # print([timestamp, masterTCPArray[1], masterTCPArray[2], followerTCP[1], followerTCP[2]])
-                    writer.writerow([timestamp, masterTCPArray[1], masterTCPArray[2], followerTCP[1], followerTCP[2]])
+                    writer.writerow([timestamp, masterTCPArray[0], masterTCPArray[1], masterTCPArray[2], followerTCP[0], followerTCP[1], followerTCP[2]])
                     file.flush()
 
 def plot_tcp_data(file_path):
     # Prepare lists to store data
     timestamps = []
+    master_x = []
     master_y = []
     master_z = []
+    follower_x = []
     follower_y = []
     follower_z = []
 
@@ -157,37 +158,45 @@ def plot_tcp_data(file_path):
             
             for row in reader:
                 timestamps.append(float(row[0]))  # Timestamp (s)
-                master_y.append(float(row[1]))   # Master TCP Y
-                master_z.append(float(row[2]))   # Master TCP Z
-                follower_y.append(float(row[3])) # Follower TCP Y
-                follower_z.append(float(row[4])) # Follower TCP Z
+                master_x.append(float(row[1]))   # Master TCP X
+                master_y.append(float(row[2]))   # Master TCP Y
+                master_z.append(float(row[3]))   # Master TCP Z
+                follower_x.append(float(row[4])) # Follower TCP X
+                follower_y.append(float(row[5])) # Follower TCP Y
+                follower_z.append(float(row[6])) # Follower TCP Z
 
-        # Create a figure with two subplots
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+        # Create a figure with three subplots
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
 
-        # Plot Master vs Follower for Y values
-        ax1.plot(timestamps, master_y, label='Master Y', color='blue')
-        ax1.plot(timestamps, follower_y, label='Follower Y', color='red')
-        ax1.set_title("Master vs Follower TCP Y")
+        # Plot Master vs Follower for X values
+        ax1.plot(timestamps, master_x, label='Master X', color='blue')
+        ax1.plot(timestamps, follower_x, label='Follower X', color='red')
+        ax1.set_title("Master vs Follower TCP X")
         ax1.set_xlabel("Timestamp (s)")
-        ax1.set_ylabel("TCP Y")
+        ax1.set_ylabel("TCP X")
         ax1.legend()
         ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax1.xaxis.set_major_locator(ticker.MultipleLocator(1))  # Set grid line spacing to 1 second
 
-        # Set grid line spacing to 1 second
-        ax1.xaxis.set_major_locator(ticker.MultipleLocator(1))  
-
-        # Plot Master vs Follower for Z values
-        ax2.plot(timestamps, master_z, label='Master Z', color='blue')
-        ax2.plot(timestamps, follower_z, label='Follower Z', color='red')
-        ax2.set_title("Master vs Follower TCP Z")
+        # Plot Master vs Follower for Y values
+        ax2.plot(timestamps, master_y, label='Master Y', color='blue')
+        ax2.plot(timestamps, follower_y, label='Follower Y', color='red')
+        ax2.set_title("Master vs Follower TCP Y")
         ax2.set_xlabel("Timestamp (s)")
-        ax2.set_ylabel("TCP Z")
+        ax2.set_ylabel("TCP Y")
         ax2.legend()
         ax2.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax2.xaxis.set_major_locator(ticker.MultipleLocator(1))  # Set grid line spacing to 1 second
 
-        # Set grid line spacing to 1 second
-        ax2.xaxis.set_major_locator(ticker.MultipleLocator(1))  
+        # Plot Master vs Follower for Z values
+        ax3.plot(timestamps, master_z, label='Master Z', color='blue')
+        ax3.plot(timestamps, follower_z, label='Follower Z', color='red')
+        ax3.set_title("Master vs Follower TCP Z")
+        ax3.set_xlabel("Timestamp (s)")
+        ax3.set_ylabel("TCP Z")
+        ax3.legend()
+        ax3.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax3.xaxis.set_major_locator(ticker.MultipleLocator(1))  # Set grid line spacing to 1 second
 
         # Adjust layout for better presentation
         plt.tight_layout()
