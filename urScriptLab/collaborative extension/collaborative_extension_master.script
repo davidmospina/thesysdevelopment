@@ -77,8 +77,7 @@ global qNext = syncPos
 def partnerThread():
   while(True):
     # popup("qNext: " + to_str(qNext), "status")
-    servojPartner(qNext,0,0, 0.001,0.1, gain=900)
-    sync()
+    servojPartner(qNext,0,0, 0.001,0.1, gain=1200)
   end
 end
 
@@ -167,7 +166,7 @@ while (True):
     # popup("deltaZ: " + to_str(deltaZ) + " deltaX: " + to_str(deltaX) , "status", blocking = True)
     poseNext = p[0.079 + deltaX , -0.278, 0.189 + deltaZ ,0.0, 3.16, 0.04]
     qNext = get_inverse_kin(poseNext)
-    servoj(qNext,0,0, 0.001,0.1, gain=900)
+    servoj(qNext,0,0, 0.001,0.1, gain=1200)
     sync()
   end
   global startTime = time(mode = 2)
