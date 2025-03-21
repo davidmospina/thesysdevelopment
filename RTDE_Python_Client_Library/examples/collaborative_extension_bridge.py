@@ -47,6 +47,10 @@ function_parameters_follower_in_names, function_parameters_follower_in_types = c
 function_parameters_master_out_names, function_parameters_master_out_types = conf.get_recipe("function_parameters_master_out")
 sync_names, sync_types = conf.get_recipe("sync")
 
+# New boolean recipes
+bool_in_names, bool_in_types = conf.get_recipe("extended_reg_in")
+bool_out_names, bool_out_types = conf.get_recipe("extension_reg_out")
+
 # Initialize connection variables
 ROBOT_HOST_1 = "192.168.56.101"
 ROBOT_HOST_2 = "192.168.56.102"
@@ -89,16 +93,31 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         followerFT= stateFollower.actual_TCP_force
         followerSyncPosition = stateFollower.output_int_register_24
         followerFunctionStatus = stateFollower.output_int_register_25
+        masterIOType = stateMaster.output_int_register_26 #new
+        masterIONumber = stateMaster.output_int_register_27 #new
+
+        # print("This is the status function " + str(followerFunctionStatus))
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
-    master_to_follower_registers(24,33,inputsFollower,stateMaster)
+
+    int_to_int_register(inputsFollower, masterIOType, 26) #new
+    int_to_int_register(inputsFollower, masterIONumber, 27) #new
+
+    master_to_follower_registers(24,34,inputsFollower,stateMaster)
+
+    # Map the boolean registers
+    inputsFollower = master_to_follower_bool_registers(64, 64, inputsFollower, stateMaster)
     
     int_to_int_register(inputsMaster, followerSyncPosition, syncPosIndex)
     int_to_int_register(inputsMaster, followerFunctionStatus, functionIndex)
+
     
 
     followerCon.send(inputsFollower)
+
+    print(inputsMaster.__dict__)  # Check if all required registers are initialized
+
     masterCon.send(inputsMaster)
     keep_running = True
 
@@ -120,6 +139,21 @@ def int_to_int_register(dic, value, index):
    
     dic.__dict__[f"input_int_register_{index}"] = value
     return dic
+
+def master_to_follower_bool_registers(lower_index, upper_index, inputsFollower, stateMaster):
+    for i in range(lower_index, upper_index + 1):
+        # Get the boolean value from the master's output bit register
+        master_bool_value = getattr(stateMaster, f"output_bit_register_{i}", None)
+        
+        # Set the corresponding boolean input bit register on the follower
+        setattr(inputsFollower, f"input_bit_register_{i}", master_bool_value)
+        
+        # Optional: you can print or log to check the values being transferred
+        # print(f"Master output_bit_register_{i}: {master_bool_value} -> Follower input_bit_register_{i}: {getattr(inputsFollower, f'input_bit_register_{i}')}")
+    
+    return inputsFollower
+
+
 
 def collect_and_save_data():
     global keep_running, masterTCPArray, followerTCP
@@ -236,12 +270,12 @@ def main():
 
 
     # setup recipes
-    followerCon.send_output_setup(state_names + sync_names, state_types + sync_types)
-    inputsFollower = followerCon.send_input_setup(function_parameters_follower_in_names + sync_names, function_parameters_follower_in_types + sync_types)
+    followerCon.send_output_setup(state_names, state_types)
+    inputsFollower = followerCon.send_input_setup(function_parameters_follower_in_names + sync_names + bool_in_names, function_parameters_follower_in_types + sync_types  + bool_in_types)
 
 
     # setup recipes
-    masterCon.send_output_setup(state_names + function_parameters_master_out_names + sync_names, state_types + function_parameters_master_out_types + sync_types)
+    masterCon.send_output_setup(state_names + function_parameters_master_out_names + sync_names + bool_out_names, state_types + function_parameters_master_out_types + sync_types + bool_out_types)
     inputsMaster = masterCon.send_input_setup(sync_names, sync_types)
 
     # Start data collection in a separate thread
@@ -266,7 +300,7 @@ def main():
 
         keep_running = False
 
-        #CLEANUP PHASE + DEBUGGING 
+        #CLEANUP PHASE + DEBUGGING (add here the registers that should be reset upon bridge shutdown) 
         inputsMaster.input_int_register_24 = 0
         masterCon.send(inputsMaster)  
         inputsFollower.input_int_register_24 = 0
@@ -274,15 +308,6 @@ def main():
 
         time.sleep(0.01) #allow time to actually change registers
 
-        stateMaster = masterCon.receive()
-        stateFollower = followerCon.receive()
-        #Print registers status on program exit:
-        print(f"Master final value of input_int_register_24: {stateMaster.input_int_register_24}")
-        #print(f"Master final value of input_int_register_25: {stateMaster.input_int_register_25}")
-        print(f"Follower final value of input_int_register_24: {stateFollower.input_int_register_24}")
-        #print(f"Follower final value of input_int_register_25: {stateFollower.input_int_register_25}")
-
-             
 
         # Wait for the data collection thread to finish
         if args.plot or args.plot:

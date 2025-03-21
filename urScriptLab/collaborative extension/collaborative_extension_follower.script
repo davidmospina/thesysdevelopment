@@ -24,8 +24,11 @@ thread Thread_function_code():
   
   while (True):
     global functionCode=read_input_integer_register(25)
-    C = read_input_float_register(30) #show value in status
-    D = read_input_float_register(31)
+    #add registers that will be shown to user
+    A = read_input_integer_register(26)
+    B = read_input_integer_register(25)
+    C = read_input_boolean_register(64)
+    D = read_input_float_register(34)
     sync()
   end
 end
@@ -47,6 +50,7 @@ while (True):
   while(True):
     sync()
     write_output_integer_register(25,1)
+
     if functionCode == 10:
       a = read_input_float_register(30)
       v = read_input_float_register(31)
@@ -55,6 +59,7 @@ while (True):
       read_target()
       movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
       write_output_integer_register(25,2)
+
     elif functionCode == 11:
       a = read_input_float_register(30)
       v = read_input_float_register(31)
@@ -63,6 +68,36 @@ while (True):
       read_target()
       movej(moveTarget,a,v,t,r)    
       write_output_integer_register(25,2)
+
+    elif functionCode == 13:
+      n = read_input_integer_register(27) #The number (id) of the output
+      l = read_input_boolean_register(64) #signal level
+
+      set_configurable_digital_out(n, l)
+      write_output_integer_register(25,2)
+
+    elif functionCode == 14:
+      n = read_input_integer_register(27) #The number (id) of the output
+      l = read_input_boolean_register(64) #signal level
+
+      set_standard_digital_out(n, l)
+      write_output_integer_register(25,2)
+
+    elif functionCode == 15:
+      n = read_input_integer_register(27) #The number (id) of the output
+      av = read_input_float_register(34) #relative signal level for Analog Out
+
+      set_standard_analog_out(n,av)
+      write_output_integer_register(25,2)
+
+    elif functionCode == 16:
+      n = read_input_integer_register(27) #The number (id) of the output
+      l = read_input_boolean_register(64) #signal level
+
+      set_tool_digital_out(n,l)
+      write_output_integer_register(25,2)
+
+
     end    
   end
 end
