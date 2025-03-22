@@ -97,6 +97,24 @@ while (True):
       set_tool_digital_out(n,l)
       write_output_integer_register(25,2)
 
+    elif functionCode == 17:
+      n = read_input_integer_register(28)
+      level = get_configurable_digital_in(n) #needs a boolean output register placeholder 
+      write_output_boolean_register(65,level)
+      write_output_integer_register(25,2)
+    
+    elif functionCode == 18:
+      n = read_input_integer_register(28)
+      float = get_standard_analog_in(n) #needs a float output register placeholder
+      write_output_float_register(37,float)
+      write_output_integer_register(25,2)
+
+    elif functionCode == 19:
+      n = read_input_integer_register(28)
+      level = get_standard_digital_in(n) #needs a boolean output register placeholder 
+      write_output_boolean_register(66,level)
+      write_output_integer_register(25,2)
+      
 
     end    
   end

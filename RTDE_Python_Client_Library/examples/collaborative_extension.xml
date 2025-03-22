@@ -11,14 +11,18 @@
 		<field name="output_int_register_25" type="INT32"/>
 		<!-- I/O function type -->
 		<field name="output_int_register_26" type="INT32"/>
-		<!-- I/O function number -->
+		<!-- I/O Output selector (number) -->
 		<field name="output_int_register_27" type="INT32"/>
+		<!-- I/O Input selector (number) -->
+		<field name="output_int_register_28" type="INT32"/>
 
 	</recipe>
 	
 	<recipe key="extended_reg_in">
 		<!-- I/O parameters -->
     	<field name="input_bit_register_64" type="BOOL"/>
+		<field name="input_bit_register_65" type="BOOL"/>
+		<field name="input_bit_register_66" type="BOOL"/>
 	</recipe>
 
 	<recipe key="function_parameters_follower_in">
@@ -44,6 +48,7 @@
 		<field name="input_double_register_33" type="DOUBLE"/>
 		<!-- I/O parameters -->
 		<field name="input_double_register_34" type="DOUBLE"/>
+		<field name="input_double_register_37" type="DOUBLE"/>
 		<!-- I/O parameter type-->
 		<field name="input_int_register_26" type="INT32"/>
 		<!-- I/O parameter number-->
@@ -54,6 +59,8 @@
 	<recipe key="extension_reg_out">
 		<!-- I/O parameters -->
     	<field name="output_bit_register_64" type="BOOL"/>
+		<field name="output_bit_register_65" type="BOOL"/>
+		<field name="output_bit_register_66" type="BOOL"/>
 	</recipe>
 
 	<recipe key="function_parameters_master_out">
@@ -79,6 +86,7 @@
 		<field name="output_double_register_33" type="DOUBLE"/>
 		<!-- I/O parameters -->
 		<field name="output_double_register_34" type="DOUBLE"/>
+		<field name="output_double_register_37" type="DOUBLE"/>
 	</recipe>
 
 

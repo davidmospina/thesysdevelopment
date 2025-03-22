@@ -108,6 +108,50 @@ def partner_set_tool_digital_out(number, level):
   write_output_integer_register(25, 0)
 end
 
+def partner_get_configurable_digital_in(number):
+  write_output_integer_register(25, 17)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value1 = read_input_boolean_register(65) #boolean value
+  write_output_integer_register(25, 0)
+
+  return read_value1
+end
+
+def partner_get_standard_analog_in(number):
+  write_output_integer_register(25, 18)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value2 = read_input_float_register(37)
+  write_output_integer_register(25, 0)
+
+  return read_value2
+end
+
+def partner_get_standard_digital_in(number):
+  write_output_integer_register(25, 19)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value3 = read_input_boolean_register(66) #boolean value
+  write_output_integer_register(25, 0)
+
+  return read_value3
+end
+
+
+
 
 write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
@@ -144,6 +188,12 @@ while (True):
 
   #Example of partner set I/O:
   #partner_set_standard_digital_out(1, high)
+
+  #digital_in_value = partner_get_standard_digital_in(5)  
+  #popup("Digital Input Value: " + to_str(digital_in_value), blocking=True)
+
+  #value2 = partner_get_standard_analog_in(1) 
+  #popup("Analog Input Value: " + to_str(value2), blocking=True)
   
   movel(pose)
   movelPartner(pose, a=1.2, v=0.25, t=0, r=0) #a=1.3, v=0.26, t=0, r=0

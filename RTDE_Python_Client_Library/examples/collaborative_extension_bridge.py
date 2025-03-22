@@ -94,20 +94,23 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         followerSyncPosition = stateFollower.output_int_register_24
         followerFunctionStatus = stateFollower.output_int_register_25
         masterIOType = stateMaster.output_int_register_26 #new
-        masterIONumber = stateMaster.output_int_register_27 #new
+        masterONumber = stateMaster.output_int_register_27 #new
+        masterINumber = stateMaster.output_int_register_28 #new
 
         # print("This is the status function " + str(followerFunctionStatus))
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
 
-    int_to_int_register(inputsFollower, masterIOType, 26) #new
-    int_to_int_register(inputsFollower, masterIONumber, 27) #new
+    int_to_int_register(inputsFollower, masterIOType, 26) 
+    int_to_int_register(inputsFollower, masterONumber, 27) 
+    int_to_int_register(inputsFollower, masterINumber, 28) 
 
-    master_to_follower_registers(24,34,inputsFollower,stateMaster)
+    list = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 37]
+    master_to_follower_registers(list,inputsFollower,stateMaster)
 
     # Map the boolean registers
-    inputsFollower = master_to_follower_bool_registers(64, 64, inputsFollower, stateMaster)
+    inputsFollower = master_to_follower_bool_registers(64, 66, inputsFollower, stateMaster)
     
     int_to_int_register(inputsMaster, followerSyncPosition, syncPosIndex)
     int_to_int_register(inputsMaster, followerFunctionStatus, functionIndex)
@@ -116,16 +119,13 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
 
     followerCon.send(inputsFollower)
 
-    print(inputsMaster.__dict__)  # Check if all required registers are initialized
 
     masterCon.send(inputsMaster)
     keep_running = True
 
-def master_to_follower_registers(lower_index, upper_index, inputsFollower,stateMaster):
-    for i in range(lower_index, upper_index + 1):
-        # print(f"master output_double_register_{i}: " + str(getattr(stateMaster, f"output_double_register_{i}")))
-        setattr(inputsFollower, f"input_double_register_{i}", getattr(stateMaster, f"output_double_register_{i}", None))
-        # print(f"follower input_double_register_{i}: " + str(getattr(inputsFollower, f"input_double_register_{i}")))
+def master_to_follower_registers(register_list, inputsFollower,stateMaster):
+    for reg in register_list:
+        setattr(inputsFollower, f"input_double_register_{reg}", getattr(stateMaster, f"output_double_register_{reg}", None))
     return inputsFollower
 
 def list_to_float_registers(dic, list, index):
