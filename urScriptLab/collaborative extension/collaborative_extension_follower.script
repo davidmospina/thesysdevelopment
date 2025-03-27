@@ -1,81 +1,65 @@
+### FOLLOWER SCRIPT ###
 
-#Define syncPos as desired
-global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
-#Initialization of Variables
+global syncPos = [d2r(-91.71), d2r(-98.96), d2r(-126.22), d2r(-46.26), d2r(91.39), d2r(-1.78)]
 global moveTarget = [0, 0, 0, 0, 0, 0]
-global ftPartner = p[0, 0, 0, 0, 0, 0]
-global inPosSync = 0
-# global functionCode = 0
-
-# def procress_function_code(functionCode):
-#   if functionCode == 10 or functionCode == 11
 
 def read_target():
-    tmpMoveTarget=[0,0,0,0,0,0]
-    tmpMoveTarget[0] = read_input_float_register(24)
-    tmpMoveTarget[1] = read_input_float_register(25)
-    tmpMoveTarget[2] = read_input_float_register(26)
-    tmpMoveTarget[3] = read_input_float_register(27)
-    tmpMoveTarget[4] = read_input_float_register(28)
-    tmpMoveTarget[5] = read_input_float_register(29)
-    global moveTarget=tmpMoveTarget
+  tmpMoveTarget = [0,0,0,0,0,0]
+  tmpMoveTarget[0] = read_input_float_register(24)
+  tmpMoveTarget[1] = read_input_float_register(25)
+  tmpMoveTarget[2] = read_input_float_register(26)
+  tmpMoveTarget[3] = read_input_float_register(27)
+  tmpMoveTarget[4] = read_input_float_register(28)
+  tmpMoveTarget[5] = read_input_float_register(29)
+  global moveTarget = tmpMoveTarget
 end
 
-# thread Thread_function_code():
-  
-#   while (True):
-#     global functionCode=read_input_integer_register(25)
-#     sync()
-#   end
-# end
-# threadId_Thread_2 = run Thread_function_code()
-
-write_output_integer_register(24, 0)
-write_output_integer_register(25, 0)
-
-movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
-
-while (inPosSync != 2 ):
-    global inPosSync = read_input_integer_register(24)
-end
-write_output_integer_register(24, 2)
-sync()
+write_output_integer_register(25, 0)  # Follower ready
 
 while (True):
-  startTime = time(mode = 2)
-  while(True):
-    write_output_integer_register(25,1)
-    functionCode = read_input_integer_register(25)
-    if functionCode == 10:
-      a = read_input_float_register(30)
-      v = read_input_float_register(31)
-      t = read_input_float_register(32)
-      r = read_input_float_register(33)
-      read_target()
-      # popup("v: " + to_str(v) + " ,a: " + to_str(a), "state", blocking = True)
-      movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
-      write_output_integer_register(25,2)
-    elif functionCode == 11:
-      a = read_input_float_register(30)
-      v = read_input_float_register(31)
-      t = read_input_float_register(32)
-      r = read_input_float_register(33)
-      read_target()
-      movej(moveTarget,a,v,t,r)    
-      write_output_integer_register(25,2)
-    elif functionCode == 12:
-      a = read_input_float_register(30)
-      v = read_input_float_register(31)
-      t = read_input_float_register(32)
-      lookahead_time = read_input_float_register(33)
-      gain = read_input_float_register(34)
-      read_target()
-      # popup([a,v,t,r],[a,v,t,lookahead_time,gain])
-      servoj(moveTarget,a,v,t,lookahead_time,gain)
-      # servoj(qNext,0,0, 0.001,0.1, gain=900)
-      # popup("entered in servoj ", "status")    
-      write_output_integer_register(25,2)
-    end
-    sync()   
+  functionCode = read_input_integer_register(25)
+
+  if functionCode == 10:
+    popup("FOLLOWER: movel command received. Acknowledging...", "Follower")
+    write_output_integer_register(25, 2)
+    a = read_input_float_register(30)
+    v = read_input_float_register(31)
+    t = read_input_float_register(32)
+    r = read_input_float_register(33)
+    read_target()
+    popup("FOLLOWER: Executing movel...", "Follower")
+    movel(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], a, v, t, r)
+    write_output_integer_register(25, 3)
+
+  elif functionCode == 11:
+    popup("FOLLOWER: movej command received. Acknowledging...", "Follower")
+    write_output_integer_register(25, 2)
+    a = read_input_float_register(30)
+    v = read_input_float_register(31)
+    t = read_input_float_register(32)
+    r = read_input_float_register(33)
+    read_target()
+    movej(moveTarget, a, v, t, r)
+    write_output_integer_register(25, 3)
+
+  elif functionCode == 12:
+    popup("FOLLOWER: servoj command received. Acknowledging...", "Follower")
+    write_output_integer_register(25, 2)
+    a = read_input_float_register(30)
+    v = read_input_float_register(31)
+    t = read_input_float_register(32)
+    lookahead_time = read_input_float_register(33)
+    gain = read_input_float_register(34)
+    read_target()
+    servoj(moveTarget, lookahead_time=lookahead_time, gain=gain)
+    write_output_integer_register(25, 3)
   end
+
+  # Wait for master to reset to 0
+  while (read_input_integer_register(25) != 0):
+    sleep(0.01)
+  end
+
+  write_output_integer_register(25, 0)
+  #popup("FOLLOWER: Back to idle.", "Follower")
 end

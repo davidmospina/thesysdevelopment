@@ -1,178 +1,174 @@
+### MASTER SCRIPT ###
 
+######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
 
-######### COLLABORATIVE EXENTESION FUNCTIONS AND VARIABLES #########
-#Define syncPos as desired
-global inPosSync = 0
-global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
+global syncPos = [d2r(-91.71), d2r(-98.96), d2r(-126.22), d2r(-46.26), d2r(91.39), d2r(-1.78)]
 
-#function status: 0 - no function / 1 - function received / 2 - function perform 
-def movelPartner(pose, a=1.3, v=0.26, t=0, r=0):
- # popup([a,v,t,r],[a,v,t,r])
-  write_output_integer_register(25, 10) #send function code
+def write_target(target):
+  write_output_float_register(24, target[0])
+  write_output_float_register(25, target[1])
+  write_output_float_register(26, target[2])
+  write_output_float_register(27, target[3])
+  write_output_float_register(28, target[4])
+  write_output_float_register(29, target[5])
+end
+
+def movelPartner(pose, a=1.2, v=0.25, t=0, r=0):
+  popup("MASTER: Waiting for follower to be idle...", "movelPartner")
+  while (read_input_integer_register(25) != 0): 
+    sleep(0.01) 
+  end
+
+  popup("MASTER: Sending movel command (10)...", "movelPartner")
   write_target(pose)
-  write_output_float_register(30,a)
-  write_output_float_register(31,v)
-  write_output_float_register(32,t)
-  write_output_float_register(33,r)
-  global robotStatus = read_input_integer_register(25)
-  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
-    global robotStatus = read_input_integer_register(25)
-  end  
-  # popup([a,v,t,r],[a,v,t,r])
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+  write_output_integer_register(25, 10)
+
+  popup("MASTER: Waiting for ACK (2)...", "movelPartner")
+  while (read_input_integer_register(25) != 2): 
+    sleep(0.01) 
+  end
+
+  popup("MASTER: ACK received. Waiting for DONE (3)...", "movelPartner")
+  while (read_input_integer_register(25) != 3): sleep(0.01) end
+
+  popup("MASTER: Command complete. Resetting...", "movelPartner")
   write_output_integer_register(25, 0)
+  while (read_input_integer_register(25) != 0): sleep(0.01) end
+
+  popup("MASTER: Communication reset. Done.", "movelPartner")
 end
 
 def movejPartner(q, a=1.3, v=0.26, t=0, r=0):
-  # popup([a,v,t,r],[a,v,t,r])
-   write_output_integer_register(25, 11) #send function code
-   write_target(q)
-   write_output_float_register(30,a)
-   write_output_float_register(31,v)
-   write_output_float_register(32,t)
-   write_output_float_register(33,r)
-   #sync()
-   global robotStatus = read_input_integer_register(25)
-   while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
-     global robotStatus = read_input_integer_register(25)
-   end  
-   write_output_integer_register(25, 0)
- end
+  popup("MASTER: Waiting for follower to be idle...", "movejPartner")
+  while (read_input_integer_register(25) != 0): sleep(0.01) end
 
+  popup("MASTER: Sending movej command (11)...", "movejPartner")
+  write_target(q)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+  write_output_integer_register(25, 11)
 
- def servojPartner(q, a=0, v=0, t=0.002, lookahead_time=0.1,gain=300):
-  # popup([a,v,t,r],[a,v,t,r])
-   write_output_integer_register(25, 12) #send function code
-   write_target(q)
-   write_output_float_register(30,a)
-   write_output_float_register(31,v)
-   write_output_float_register(32,t)
-   write_output_float_register(33,lookahead_time)
-   write_output_float_register(34,gain)
+  popup("MASTER: Waiting for ACK (2)...", "movejPartner")
+  while (read_input_integer_register(25) != 2): sleep(0.01) end
 
-   #sync()
-   global robotStatus = read_input_integer_register(25)
-   while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
-     global robotStatus = read_input_integer_register(25)
-   end  
-   write_output_integer_register(25, 0)
- end
- 
-def write_target(target):
-  write_output_float_register(24,target[0])
-  write_output_float_register(25,target[1])
-  write_output_float_register(26,target[2])
-  write_output_float_register(27,target[3])
-  write_output_float_register(28,target[4])
-  write_output_float_register(29,target[5])
+  popup("MASTER: ACK received. Waiting for DONE (3)...", "movejPartner")
+  while (read_input_integer_register(25) != 3): sleep(0.01) end
+
+  popup("MASTER: Command complete. Resetting...", "movejPartner")
+  write_output_integer_register(25, 0)
+  while (read_input_integer_register(25) != 0): sleep(0.01) end
+
+  popup("MASTER: Communication reset. Done.", "movejPartner")
 end
+
+def servojPartner(q, a=0, v=0, t=0.002, lookahead_time=0.1, gain=300):
+  popup("MASTER: Waiting for follower to be idle...", "servojPartner")
+  while (read_input_integer_register(25) != 0): sleep(0.01) end
+
+  popup("MASTER: Sending servoj command (12)...", "servojPartner")
+  write_target(q)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, lookahead_time)
+  write_output_float_register(34, gain)
+  write_output_integer_register(25, 12)
+
+  popup("MASTER: Waiting for ACK (2)...", "servojPartner")
+  while (read_input_integer_register(25) != 2): sleep(0.01) end
+
+  popup("MASTER: ACK received. Waiting for DONE (3)...", "servojPartner")
+  while (read_input_integer_register(25) != 3): sleep(0.01) end
+
+  popup("MASTER: Command complete. Resetting...", "servojPartner")
+  write_output_integer_register(25, 0)
+  while (read_input_integer_register(25) != 0): sleep(0.01) end
+
+  popup("MASTER: Communication reset. Done.", "servojPartner")
+end
+
 ######### USER PROGRAM FUNCTIONS AND VARIABLES #########
 
-#Initialization of Variables
-global moveTarget = p[0, 0, 0, 0, 0, 0]
-global ftPartner = p[0, 0, 0, 0, 0, 0]
-global pose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
+global tPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
 global qNext = syncPos
-
 
 def partnerThread():
   while(True):
-    # popup("qNext: " + to_str(qNext), "status")
-    servojPartner(qNext,0,0, 0.001,0.1, gain=1200)
+    servojPartner(qNext,0,0, 0.001,0.1, gain=1500)
   end
 end
-
-######### INITAL SYNC #########
-write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
 
-movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
-write_output_integer_register(24, 2)
-
-while (inPosSync != 2):
-    global inPosSync = read_input_integer_register(24)
-end
-sync()
-
-
-
+movej(syncPos, a=1.3, v=0.26)
+movejPartner(syncPos, a=1.3, v=0.26)
+sleep(3)
 
 while (True):
-  global startTime = time(mode = 2)
-  # # popup(startTime, "time stamp", True)
-  # moveN = 0
-  # q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
-  # movej(q)
-  # # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # movejPartner(q, a=1.3, v=0.26, t=0, r=0)
-  # # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # moveN = moveN + 1
-  # q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
-  # movej(q)
-  # # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # movejPartner(q, a=1.3, v=0.26, t=0, r=0)
-  # # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # moveN = moveN + 1
-  # q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
-  # movej(q)
-  # # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # movejPartner(q, a=1.3, v=0.26, t=0, r=0)
-  # # popup("follwer performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # moveN = moveN + 1
-  # q = syncPos
-  # movej(q)
-  # # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # movejPartner(q, a=1.3, v=0.26, t=0, r=0)
-  # # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # moveN = moveN + 1
+  servoPose = tPose
+  #Perform a square
+  movel(tPose, a=1.3, v=0.26, t=0, r=0)
+  movelPartner(tPose, a=1.3, v=0.26, t=0, r=0)
+  tPose[2] = tPose[2] + 0.1
+  movel(tPose, a=1.3, v=0.26, t=0, r=0)
+  movelPartner(tPose, a=1.3, v=0.26, t=0, r=0)  
+  tPose[1] = tPose[1] + 0.1
+  movel(tPose, a=1.3, v=0.26, t=0, r=0)
+  movelPartner(tPose, a=1.3, v=0.26, t=0, r=0)
+  tPose[2] = tPose[2] - 0.1
+  movel(tPose, a=1.3, v=0.26, t=0, r=0)
+  movelPartner(tPose, a=1.3, v=0.26, t=0, r=0)
 
-  # movel(pose)
-  # # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
-  # # popup("follower performed " + to_str(moveN)+ " move", "status", blocking = True)
-  # moveN = moveN + 1
+  sleep(3)
 
-  # pose[2] = pose[2] + 0.1
-  # movel(pose)
-  # movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
-  
-  # pose[1] = pose[1] + 0.1
-  # movel(pose)
-  # movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
+  # #perform incremenal joint poistion
+  q = syncPos
+  movej(q, a=1.3, v=0.26, t=0, r=0)
+  movejPartner(q, a=1.3, v=0.26, t=0, r=0)
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q, a=1.3, v=0.26, t=0, r=0)
+  movejPartner(q, a=1.3, v=0.26, t=0, r=0)
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q, a=1.3, v=0.26, t=0, r=0)
+  movejPartner(q, a=1.3, v=0.26, t=0, r=0)
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q, a=1.3, v=0.26, t=0, r=0)
+  movejPartner(q, a=1.3, v=0.26, t=0, r=0)
 
-  # pose[2] = pose[2] - 0.1
-  # movel(pose)
-  # movelPartner(pose, a=1.3, v=0.26, t=0, r=0)
- 
-  # pose[1] = pose[1] - 0.1
-  
-  
+  q = syncPos
+  movej(q, a=1.3, v=0.26, t=0, r=0)
+  movejPartner(q, a=1.3, v=0.26, t=0, r=0)
 
   A=0.10
   p=0
-  w=2*3.1416/20
+  w=2*3.1416/40
+  sleep(0.5)
   
-  poseInit = pose
-  poseInit[0] = poseInit[0] + A
-  movel(poseInit)
-  # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
-  movelPartner(poseInit, a=1.3, v=0.26, t=0, r=0)
-  # popup("after poseInit", "status", blocking = True)
+  servoPose[0] = servoPose[0] + A
+  movel(servoPose,  a=1.3, v=0.26, t=0, r=0)
+  movelPartner(servoPose, a=1.3, v=0.26, t=0, r=0)
+  sleep(1.5)
+  global startTime = time(mode = 2)
   thread move_partnerThread(): partnerThread() end
   thrd = run move_partnerThread()
   while (p<=6.2831283):
-    p = p + w/500
-    deltaZ = A*sin(p)
-    deltaX = A*cos(p)
+    phase = phase + w/500
+    deltaZ = A*sin(phase)
+    deltaX = A*cos(phase)
     # popup("deltaZ: " + to_str(deltaZ) + " deltaX: " + to_str(deltaX) , "status", blocking = True)
     poseNext = p[0.079 + deltaX , -0.278, 0.189 + deltaZ ,0.0, 3.16, 0.04]
     qNext = get_inverse_kin(poseNext)
-    servoj(qNext,0,0, 0.001,0.1, gain=1200)
+    servoj(qNext,0,0, 0.001,0.1, gain=1500)
     sync()
   end
-  global startTime = time(mode = 2)
+  global endTime = time(mode = 2)
 
   kill thrd
-  popup("thrd killed", "status", blocking = True)
-  sync()
-end
+  popup("start: " + to_str(startTime) + " end: " + to_str(endTime), "status", blocking = True)
 
+end
