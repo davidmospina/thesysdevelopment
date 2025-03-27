@@ -63,12 +63,14 @@ functionIndex = 25
 # Initialize shared variables with thread synchronization
 masterTCPArray = None
 followerTCP = None
+followerFunctionStatus = None
+masterFunctionCode = None
 keep_running = True
 lock = threading.Lock()
 
 # Function to safely update global state variables
 def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
-    global masterTCPArray, followerTCP, keep_running
+    global masterTCPArray, followerTCP, keep_running, followerFunctionStatus, masterFunctionCode
 
     stateMaster = masterCon.receive()
     stateFollower = followerCon.receive()
@@ -82,11 +84,13 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         masterTCPArray = stateMaster.actual_TCP_pose
         masterFTArray = stateMaster.actual_TCP_force
         masterSyncPosition = stateMaster.output_int_register_24
-        masterFunctionCode = stateMaster.output_int_register_25
+        masterFunctionOut = stateMaster.output_int_register_25
+        followerStatusIn = stateMaster.output_int_register_25
         followerTCP= stateFollower.actual_TCP_pose
         followerFT= stateFollower.actual_TCP_force
         followerSyncPosition = stateFollower.output_int_register_24
         followerFunctionStatus = stateFollower.output_int_register_25
+        followerCommandIn = stateFollower.in_int_register_25
            
     int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
     int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
@@ -118,15 +122,14 @@ def int_to_int_register(dic, value, index):
    
     dic.__dict__[f"input_int_register_{index}"] = value
     return dic
-
 def collect_and_save_data():
-    global keep_running, masterTCPArray, followerTCP
+    global keep_running, masterTCPArray, followerTCP, followerFunctionStatus, masterFunctionCode
     start_time = time.time()
 
     # Open the CSV file for saving data (use 'w' mode to write)
     with open(CSV_FILE, mode='w', newline='') as file:  # 'w' mode to overwrite existing data
         writer = csv.writer(file)
-        writer.writerow(["Timestamp (s)", "Master TCP X", "Master TCP Y", "Master TCP Z", "Follower TCP X", "Follower TCP Y", "Follower TCP Z"])
+        writer.writerow(["Timestamp (s)", "Master 25 in", "Master 25 out", "follower 25 in", "follower 25 out"])
 
         while keep_running:
             time.sleep(0.5)  # Wait for 0.5 seconds
@@ -134,7 +137,7 @@ def collect_and_save_data():
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
                 if masterTCPArray is not None and followerTCP is not None:
-                    writer.writerow([timestamp, masterTCPArray[0], masterTCPArray[1], masterTCPArray[2], followerTCP[0], followerTCP[1], followerTCP[2]])
+                    writer.writerow([timestamp, masterFunctionCode,,followerFunctionStatus,])
                     file.flush()
 
 def plot_tcp_data(file_path):
