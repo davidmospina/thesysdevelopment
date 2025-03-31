@@ -172,6 +172,5 @@ while (True):
 
   kill thrd
   popup("thrd killed", "status", blocking = True)
-  sync()
 end
 
