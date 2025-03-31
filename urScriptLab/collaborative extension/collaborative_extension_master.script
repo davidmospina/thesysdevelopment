@@ -148,7 +148,7 @@ while (True):
 
   A=0.10
   p=0
-  w=2*3.1416/240
+  w=2*3.1416/40 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
   
   poseInit = programPose
   poseInit[0] = poseInit[0] + A
