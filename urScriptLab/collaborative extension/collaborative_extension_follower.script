@@ -74,7 +74,7 @@ while (True):
       servoj(moveTarget,a,v,t,lookahead_time,gain)
       # servoj(qNext,0,0, 0.001,0.1, gain=900)
       # popup("entered in servoj ", "status")    
-      write_output_integer_register(25,2)
+      #write_output_integer_register(25,2)
     end
     sync()   
   end
