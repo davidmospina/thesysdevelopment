@@ -1,0 +1,217 @@
+
+#Define syncPos as desired
+global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
+#Initialization of Variables
+global moveTarget = p[0, 0, 0, 0, 0, 0]
+global ftPartner = p[0, 0, 0, 0, 0, 0]
+global inPosSync = 0
+global pose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
+global q = syncPos
+
+#function status: 0 - no function / 1 - function received / 2 - function perform 
+def movelPartner(pose, a=1.2, v=0.25, t=0, r=0):
+ # popup([a,v,t,r],[a,v,t,r])
+  write_output_integer_register(25, 10) #send function code
+  write_target(pose)
+  write_output_float_register(30,a)
+  write_output_float_register(31,v)
+  write_output_float_register(32,t)
+  write_output_float_register(33,r)
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+def movejPartner(q, a=1.4, v=1.05, t=0, r=0): 
+  # popup([a,v,t,r],[a,v,t,r])
+   write_output_integer_register(25, 11) #send function code
+   write_target(q)
+   write_output_float_register(30,a)
+   write_output_float_register(31,v)
+   write_output_float_register(32,t)
+   write_output_float_register(33,r)
+   global robotStatus = read_input_integer_register(25)
+   while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+     global robotStatus = read_input_integer_register(25)
+   end  
+   write_output_integer_register(25, 0)
+ end
+ 
+
+
+def write_target(target):
+  write_output_float_register(24,target[0])
+  write_output_float_register(25,target[1])
+  write_output_float_register(26,target[2])
+  write_output_float_register(27,target[3])
+  write_output_float_register(28,target[4])
+  write_output_float_register(29,target[5])
+end
+
+def set_configurable_digital_out_partner(n, b):
+  write_output_integer_register(25, 13)
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, b)
+  sleep(1.5)
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+
+def set_standard_digital_out_partner(number, level="low"):
+  write_output_integer_register(25, 14)
+  write_output_integer_register(27, number) # Select IO number
+  if level == "high":
+    write_output_boolean_register(64, True)
+  else:
+    write_output_boolean_register(64, False)
+  end
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+
+def set_standard_analog_out_partner(number,analog_value):
+  write_output_integer_register(25, 15)
+  write_output_integer_register(27, number) # Select IO number
+  write_output_float_register(34, analog_value)
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+def set_tool_digital_out_partner(number, level):
+  write_output_integer_register(25, 16)
+  write_output_integer_register(27, number) # Select IO number
+  if level == "high":
+    write_output_boolean_register(64, True)
+  else:
+    write_output_boolean_register(64, False)
+  end
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  write_output_integer_register(25, 0)
+end
+
+def get_configurable_digital_in_partner(number):
+  write_output_integer_register(25, 17)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value1 = read_input_boolean_register(65) #boolean value
+  write_output_integer_register(25, 0)
+
+  return read_value1
+end
+
+def get_standard_analog_in_partner(number):
+  write_output_integer_register(25, 18)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value2 = read_input_float_register(37)
+  write_output_integer_register(25, 0)
+
+  return read_value2
+end
+
+def get_standard_digital_in_partner(number):
+  write_output_integer_register(25, 19)
+  write_output_integer_register(28, number) # Select IO number
+
+  global robotStatus = read_input_integer_register(25)
+  while (robotStatus != 2):  # Wait for function to end i.e. robotf state is free
+    global robotStatus = read_input_integer_register(25)
+  end  
+  global read_value3 = read_input_boolean_register(66) #boolean value
+  write_output_integer_register(25, 0)
+
+  return read_value3
+end
+
+
+
+
+write_output_integer_register(24, 0)
+write_output_integer_register(25, 0)
+
+movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+write_output_integer_register(24, 2)
+
+while (inPosSync != 2):
+    global inPosSync = read_input_integer_register(24)
+end
+sync()
+
+
+while (True):
+  startTime = time(mode = 2)
+  # popup(startTime, "time stamp", True)
+  moveN = 0
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q)
+  # popup("master performed " + to_str(moveN)+ " move", "status", blocking = True)
+  movejPartner(q, a=1.4, v=1.05, t=0, r=0) #a=1.3, v=0.26, t=0, r=0
+
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q)
+  movejPartner(q)
+
+  q = q + [d2r(10),d2r(10),d2r(10),d2r(10),d2r(10),d2r(10)]
+  movej(q)
+  movejPartner(q)
+
+  q = syncPos
+  movej(q)
+  movejPartner(q)
+
+  #Example of partner set I/O:
+  set_standard_digital_out_partner(1, True)
+  
+
+  #digital_in_value = get_standard_digital_in_partner(5)  
+  #popup("Digital Input Value: " + to_str(digital_in_value), blocking=True)
+
+  #value2 = get_standard_analog_in_partner(1) 
+  #popup("Analog Input Value: " + to_str(value2), blocking=True)
+  
+  movel(pose)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0) #a=1.3, v=0.26, t=0, r=0
+
+  pose[2] = pose[2] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
+  
+  pose[1] = pose[1] + 0.1
+  movel(pose)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
+
+  pose[2] = pose[2] - 0.1
+  movel(pose)
+  movelPartner(pose, a=1.2, v=0.25, t=0, r=0)
+ 
+  pose[1] = pose[1] - 0.1
+
+  set_standard_digital_out_partner(1, False)
+
+
+  sync()
+end
