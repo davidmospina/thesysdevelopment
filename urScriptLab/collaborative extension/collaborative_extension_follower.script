@@ -24,8 +24,6 @@ thread Thread_function_code():
   
   while (True):
     global functionCode=read_input_integer_register(25)
-    C = read_input_float_register(30) #show value in status
-    D = read_input_float_register(31)
     sync()
   end
 end
