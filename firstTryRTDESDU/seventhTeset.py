@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-def getSegmentTarget(timestep, limit_min=-0.4499805051349124, limit_max=0.4499805051349124, freq=1/7):
+def getSegmentTarget(timestep, limit_min=-0.299805051349124, limit_max=0.299805051349124, freq=1/10):
     """
     Calculates the position along a 1D segment, starting from the middle, oscillating back and forth between two limits.
 
@@ -42,8 +42,8 @@ gain = 600
 rt_receive_priority = 90
 rt_control_priority = 85
 
-rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102", rtde_frequency, [], True, False, rt_receive_priority)
-rtde_c = rtde_control.RTDEControlInterface("192.168.56.101", rtde_frequency, flags, ur_cap_port, rt_control_priority)
+rtde_r = rtde_receive.RTDEReceiveInterface("192.168.56.102", rtde_frequency, [], True, False, rt_receive_priority) # IP; freq; variable; verbose/logging; upper registers; priority
+rtde_c = rtde_control.RTDEControlInterface("192.168.56.101", rtde_frequency, flags, ur_cap_port, rt_control_priority) # IP; freq; flags; URCap Port; priority; verbose; upper registers
 
 # Set application real-time priority
 os_used = sys.platform
@@ -68,9 +68,9 @@ time_counter = 0.0
 # Initialize targets
 targetMiddle = rtde_r.getActualTCPPose()
 targetA = targetMiddle.copy()
-targetA[1] = -0.4499805051349124
+targetA[1] = -0.299805051349124
 targetB = targetMiddle.copy()
-targetB[1] = 0.4499805051349124
+targetB[1] = 0.299805051349124
 
 # Function to update the z-component of targets
 # def update_z_component():
@@ -92,21 +92,25 @@ targetB[1] = 0.4499805051349124
 # z_update_thread.start()
 
 # Main movement loop
-actual_q = rtde_r.getActualQ()
-rtde_c.moveJ(actual_q, 0.25, 0.5, False)
+actual_q = rtde_r.getActualQ() #Read actual joint positions from robot 102
+rtde_c.moveJ(actual_q, 0.25, 0.5, False) #Initial Movement, code waits until it reaches
+
+print("Both robots at the starting positions")
+time.sleep(5)
 
 try:
     while True:
-        t_start = rtde_c.initPeriod()
+        t_start = rtde_c.initPeriod() #start of current control cycle
         targetMiddle = rtde_r.getActualTCPPose()
         
         x = getSegmentTarget(timestep=time_counter)
+        
 
-        targetMiddle[1] = x
-        print("out of thread values:" + str(targetMiddle))
+        targetMiddle[1] = x  #change Y coordinate
+        #print("out of thread values:" + str(targetMiddle))
 
-        rtde_c.servoL(targetMiddle, vel, acc, dt, lookahead_time, gain)
-        rtde_c.waitPeriod(t_start)
+        rtde_c.servoL(targetMiddle, vel, acc, dt, lookahead_time, gain)  #dt = expected duration of control cycle
+        rtde_c.waitPeriod(t_start)  #wait until current cycle reaches desired dt (based on t_start)
         time_counter += dt
 
 except KeyboardInterrupt:
