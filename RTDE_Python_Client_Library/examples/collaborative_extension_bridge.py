@@ -39,13 +39,16 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pprint
 
+CONFIG_FILE = "collaborative_extension.xml"
+
 # Initialize logging and configurations
 logging.basicConfig(level=logging.INFO)
-conf = rtde_config.ConfigFile("collaborative_extension.xml")
-state_names, state_types = conf.get_recipe("robot_state")
-function_parameters_follower_in_names, function_parameters_follower_in_types = conf.get_recipe("function_parameters_follower_in")
-function_parameters_master_out_names, function_parameters_master_out_types = conf.get_recipe("function_parameters_master_out")
-sync_names, sync_types = conf.get_recipe("sync")
+config = rtde_config.ConfigFile(CONFIG_FILE)
+master_out_names, master_out_types = config.get_recipe("MASTER_OUT")
+master_in_names, master_in_types = config.get_recipe("MASTER_IN")
+follower_out_names, follower_out_types, = config.get_recipe("FOLLOWER_OUT")
+follower_in_names, follower_in_types  = config.get_recipe("FOLLOWER_IN")
+
 
 # Initialize connection variables
 ROBOT_HOST_1 = "192.168.56.101"
@@ -78,48 +81,60 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
     if stateMaster is None or stateFollower is None:
         keep_running = False
         return
+    
+    #SET HERE THE USED REGISTERS
+    master_in_int = [24,25]
+    master_in_bool = [65,66]
+    master_in_float = [37]
+    follower_in_int = [24, 25, 27, 28]
+    follower_in_bool = [64]
+    follower_in_float = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 37] #38 to 43 also used
 
     # Lock shared state
     with lock:
-        masterTCPArray = stateMaster.actual_TCP_pose
-        masterFTArray = stateMaster.actual_TCP_force
-        masterSyncPosition = stateMaster.output_int_register_24
-        masterFunctionCode = stateMaster.output_int_register_25
-        followerTCP= stateFollower.actual_TCP_pose
-        followerFT= stateFollower.actual_TCP_force
-        followerSyncPosition = stateFollower.output_int_register_24
-        followerFunctionStatus = stateFollower.output_int_register_25
-           
-    int_to_int_register(inputsFollower, masterSyncPosition, syncPosIndex)
-    int_to_int_register(inputsFollower, masterFunctionCode, functionIndex)
-    master_to_follower_registers(24,33,inputsFollower,stateMaster)
-    
-    int_to_int_register(inputsMaster, followerSyncPosition, syncPosIndex)
-    int_to_int_register(inputsMaster, followerFunctionStatus, functionIndex)
-    
 
+        # UPDATE MASTER IN REGISTERS BASED ON FOLLOWER OUTPUTS
+        followerTCP= stateFollower.actual_TCP_pose #needed for plot
+
+        link_int(master_in_int,stateFollower,inputsMaster)
+        link_bool(master_in_bool,stateFollower,inputsMaster)
+        link_float(master_in_float,stateFollower,inputsMaster)
+        link_vector(followerTCP, 38, 43, inputsMaster)
+
+        # UPDATE FOLLOWER IN REGISTERS BASED ON MASTER OUTPUTS
+        masterTCPArray = stateMaster.actual_TCP_pose #needed for plot
+       
+        link_int(follower_in_int,stateMaster,inputsFollower)
+        link_bool(follower_in_bool,stateMaster,inputsFollower)
+        link_float(follower_in_float,stateMaster,inputsFollower)
+
+    
     followerCon.send(inputsFollower)
     masterCon.send(inputsMaster)
     keep_running = True
 
-def master_to_follower_registers(lower_index, upper_index, inputsFollower,stateMaster):
-    for i in range(lower_index, upper_index + 1):
-        # print(f"master output_double_register_{i}: " + str(getattr(stateMaster, f"output_double_register_{i}")))
-        setattr(inputsFollower, f"input_double_register_{i}", getattr(stateMaster, f"output_double_register_{i}", None))
-        # print(f"follower input_double_register_{i}: " + str(getattr(inputsFollower, f"input_double_register_{i}")))
-    return inputsFollower
 
-def list_to_float_registers(dic, list, index):
-    for i in range(0, 6):
-        regNum = index + i
-        dic.__dict__[f"input_double_register_{regNum}"] = list[i]
-    return dic
+def link_int(reg_indexes,source,destination):
+    for reg in reg_indexes:
+        setattr(destination, f"input_int_register_{reg}", getattr(source, f"output_int_register_{reg}", None))
+    return destination
+    
+def link_bool(reg_indexes,source,destination):
+    for reg in reg_indexes:
+        setattr(destination, f"input_bit_register_{reg}", getattr(source, f"output_bit_register_{reg}", None))
+    return destination
+
+def link_float(reg_indexes,source,destination):
+    for reg in reg_indexes:
+        setattr(destination, f"input_double_register_{reg}", getattr(source, f"output_double_register_{reg}", None))
+    return destination
+
+def link_vector(vector, low_index, high_index, destination):
+    for i in range(low_index, high_index + 1):  # Iterate through the register range
+        setattr(destination, f"input_double_register_{i}", vector[i - low_index])
+    return destination
 
 
-def int_to_int_register(dic, value, index):
-   
-    dic.__dict__[f"input_int_register_{index}"] = value
-    return dic
 
 def collect_and_save_data():
     global keep_running, masterTCPArray, followerTCP
@@ -231,18 +246,16 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
         return
-    
 
 
 
-    # setup recipes
-    followerCon.send_output_setup(state_names + sync_names, state_types + sync_types)
-    inputsFollower = followerCon.send_input_setup(function_parameters_follower_in_names + sync_names, function_parameters_follower_in_types + sync_types)
+    # setup recipes for Follower
+    followerCon.send_output_setup(follower_out_names, follower_out_types)
+    inputsFollower = followerCon.send_input_setup(follower_in_names, follower_in_types)
 
-
-    # setup recipes
-    masterCon.send_output_setup(state_names + function_parameters_master_out_names + sync_names, state_types + function_parameters_master_out_types + sync_types)
-    inputsMaster = masterCon.send_input_setup(sync_names, sync_types)
+    # setup recipes for Master
+    masterCon.send_output_setup(master_out_names, master_out_types)
+    inputsMaster = masterCon.send_input_setup(master_in_names, master_in_types)
 
     # Start data collection in a separate thread
     if args.collection or args.plot:
@@ -266,7 +279,7 @@ def main():
 
         keep_running = False
 
-        #CLEANUP PHASE + DEBUGGING 
+        #CLEANUP PHASE + DEBUGGING (add here the registers that should be reset upon bridge shutdown) 
         inputsMaster.input_int_register_24 = 0
         masterCon.send(inputsMaster)  
         inputsFollower.input_int_register_24 = 0
@@ -274,15 +287,6 @@ def main():
 
         time.sleep(0.01) #allow time to actually change registers
 
-        stateMaster = masterCon.receive()
-        stateFollower = followerCon.receive()
-        #Print registers status on program exit:
-        print(f"Master final value of input_int_register_24: {stateMaster.input_int_register_24}")
-        #print(f"Master final value of input_int_register_25: {stateMaster.input_int_register_25}")
-        print(f"Follower final value of input_int_register_24: {stateFollower.input_int_register_24}")
-        #print(f"Follower final value of input_int_register_25: {stateFollower.input_int_register_25}")
-
-             
 
         # Wait for the data collection thread to finish
         if args.plot or args.plot:
