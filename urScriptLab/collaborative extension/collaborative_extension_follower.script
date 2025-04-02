@@ -5,7 +5,6 @@
 global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
 #Initialization of Variables
 global moveTarget = [0, 0, 0, 0, 0, 0]
-global ftPartner = p[0, 0, 0, 0, 0, 0]
 global inPosSync = 0
 
 
@@ -20,6 +19,9 @@ def read_target():
     global moveTarget=tmpMoveTarget
 end
 
+
+######### INITAL SYNC #########
+
 write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
 
@@ -30,6 +32,9 @@ while (inPosSync != 2 ):
 end
 write_output_integer_register(24, 2)
 sync()
+
+
+######### MAIN PROGRAM #########
 
 while (True):
   startTime = time(mode = 2)
