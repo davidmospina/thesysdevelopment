@@ -1,3 +1,5 @@
+# FOLLOWER SCRIPT
+
 
 #Define syncPos as desired
 global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
