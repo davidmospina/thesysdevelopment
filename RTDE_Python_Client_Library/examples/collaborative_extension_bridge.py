@@ -88,7 +88,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
     master_in_float = [37]
     follower_in_int = [24, 25, 27, 28]
     follower_in_bool = [64]
-    follower_in_float = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 37] #38 to 43 also used
+    follower_in_float = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37] #38 to 43 also used
 
     # Lock shared state
     with lock:
@@ -292,6 +292,8 @@ def main():
         inputsMaster.input_int_register_24 = 0
         masterCon.send(inputsMaster)  
         inputsFollower.input_int_register_24 = 0
+        #inputsFollower.input_bit_register_64 = True
+        #inputsFollower.input_int_register_27 = 0
         followerCon.send(inputsFollower)  
 
         time.sleep(0.01) #allow time to actually change registers
