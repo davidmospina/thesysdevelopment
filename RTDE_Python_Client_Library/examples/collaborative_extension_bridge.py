@@ -66,14 +66,14 @@ syncPosIndex = 24
 functionIndex = 25
 
 # Initialize shared variables with thread synchronization
-masterTCPArray = None
+masterTCP = None
 followerTCP = None
 keep_running = True
 lock = threading.Lock()
 
 # Function to safely update global state variables
 def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
-    global masterTCPArray, followerTCP, keep_running
+    global masterTCP, followerTCP, keep_running, followerQ, masterQ
 
     stateMaster = masterCon.receive()
     stateFollower = followerCon.receive()
@@ -95,6 +95,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
 
         # UPDATE MASTER IN REGISTERS BASED ON FOLLOWER OUTPUTS
         followerTCP= stateFollower.actual_TCP_pose #needed for plot
+        followerQ= stateFollower.actual_q #needed for plot
 
         link_int(master_in_int,stateFollower,inputsMaster)
         link_bool(master_in_bool,stateFollower,inputsMaster)
@@ -102,7 +103,8 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         link_vector(followerTCP, 38, 43, inputsMaster)
 
         # UPDATE FOLLOWER IN REGISTERS BASED ON MASTER OUTPUTS
-        masterTCPArray = stateMaster.actual_TCP_pose #needed for plot
+        masterTCP = stateMaster.actual_TCP_pose #needed for plot
+        masterQ = stateMaster.actual_q #needed for plot
        
         link_int(follower_in_int,stateMaster,inputsFollower)
         link_bool(follower_in_bool,stateMaster,inputsFollower)
@@ -136,8 +138,8 @@ def link_vector(vector, low_index, high_index, destination):
 
 
 
-def collect_and_save_data():
-    global keep_running, masterTCPArray, followerTCP
+def collect_and_save_tcp_data():
+    global keep_running, masterTCP, followerTCP
     start_time = time.time()
 
     # Open the CSV file for saving data (use 'w' mode to write)
@@ -150,8 +152,8 @@ def collect_and_save_data():
 
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
-                if masterTCPArray is not None and followerTCP is not None:
-                    writer.writerow([timestamp, masterTCPArray[0], masterTCPArray[1], masterTCPArray[2], followerTCP[0], followerTCP[1], followerTCP[2]])
+                if masterTCP is not None and followerTCP is not None:
+                    writer.writerow([timestamp, masterTCP[0], masterTCP[1], masterTCP[2], followerTCP[0], followerTCP[1], followerTCP[2]])
                     file.flush()
 
 def plot_tcp_data(file_path):
@@ -224,39 +226,107 @@ def plot_tcp_data(file_path):
     except Exception as e:
         print(f"Error: {e}")
 
+def collect_and_save_joint_data():
+    global keep_running, masterQ, followerQ
+    start_time = time.time()
+
+    with open('joint_data.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # Write CSV header for 6 joints each
+        writer.writerow(
+            ["Timestamp (s)"] +
+            [f"Master Joint {i+1}" for i in range(6)] +
+            [f"Follower Joint {i+1}" for i in range(6)]
+        )
+
+        while keep_running:
+            time.sleep(0.5)
+            timestamp = time.time() - start_time
+
+            with lock:
+                if masterQ is not None and followerQ is not None:
+                    row = [timestamp] + list(masterQ[:6]) + list(followerQ[:6])
+                    writer.writerow(row)
+                    file.flush()
+
+
+def plot_joint_data(file_path):
+    timestamps = []
+    master_joints = [[] for _ in range(6)]
+    follower_joints = [[] for _ in range(6)]
+
+    try:
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            headers = next(reader, None)
+            if headers is None:
+                print("CSV file is empty. No data to plot.")
+                return
+
+            for row in reader:
+                timestamps.append(float(row[0]))
+                for i in range(6):
+                    master_joints[i].append(float(row[1 + i])*180/3.1416)
+                    follower_joints[i].append(float(row[7 + i])*180/3.1416)
+
+        # Create one figure with 6 subplots stacked vertically
+        fig, axes = plt.subplots(6, 1, figsize=(12, 12), sharex=True)
+
+        for i in range(6):
+            ax = axes[i]
+            ax.plot(timestamps, master_joints[i], label=f'Master Joint {i+1}', color='blue')
+            ax.plot(timestamps, follower_joints[i], label=f'Follower Joint {i+1}', color='red')
+            ax.set_ylabel(f'J{i+1} Pos')
+            ax.set_title(f'Master vs Follower Joint {i+1}')
+            ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+            ax.legend()
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+
+        # Common x-label at the bottom
+        axes[-1].set_xlabel("Timestamp (s)")
+        plt.tight_layout()
+        plt.show()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+
 # Main execution function
 def main():
+    global keep_running
 
-    global keep_running 
-        # Argument parser to handle input parameters
+    # Argument parser to handle input parameters
     parser = argparse.ArgumentParser(description="Robot control script")
     parser.add_argument("robot_type", choices=["virtual", "real"], help="Choose 'virtual' or 'real' for the robot connection")
     parser.add_argument("--collection", action="store_true", help="Collect and save data to CSV")
-    parser.add_argument("--plot", action="store_true", help="Plot data when interrupted")
+
+    # Mutually exclusive group for selecting TCP or Joint plotting
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--tcp", action="store_true", help="Plot TCP data on exit")
+    group.add_argument("--q", action="store_true", help="Plot joint position data on exit")
+
     args = parser.parse_args()
 
     # Select the correct master connection based on the input parameter
     if args.robot_type == "real":
-        master_host = ROBOT_HOST_3  # Use ROBOT_HOST_3 for "real"
+        master_host = ROBOT_HOST_3
         follower_host = ROBOT_HOST_4
     else:
-        master_host = ROBOT_HOST_2  # Use ROBOT_HOST_2 for "virtual"
+        master_host = ROBOT_HOST_2
         follower_host = ROBOT_HOST_1
-        
+
     try:
         followerCon = rtde.RTDE(follower_host, ROBOT_PORT)
         followerCon.connect()
         print("Connected to Robot 1 successfully.")
-        
+
         masterCon = rtde.RTDE(master_host, ROBOT_PORT)
         masterCon.connect()
         print(f"Connected to Robot 2 ({args.robot_type}) successfully.")
-
     except Exception as e:
         print(f"An error occurred: {e}")
         return
-
-
 
     # setup recipes for Follower
     followerCon.send_output_setup(follower_out_names, follower_out_types)
@@ -266,43 +336,48 @@ def main():
     masterCon.send_output_setup(master_out_names, master_out_types)
     inputsMaster = masterCon.send_input_setup(master_in_names, master_in_types)
 
-    # Start data collection in a separate thread
-    if args.collection or args.plot:
-        data_thread = threading.Thread(target=collect_and_save_data)
+    # Start data collection in a separate thread based on selected type
+    if args.collection or args.tcp or args.q:
+        if args.q:
+            data_thread = threading.Thread(target=collect_and_save_joint_data)
+        else:
+            data_thread = threading.Thread(target=collect_and_save_tcp_data)
+
         data_thread.daemon = True
         data_thread.start()
 
-    # Main loop to update robot state
+    # Start robots
     if not followerCon.send_start() or not masterCon.send_start():
-        
         sys.exit()
-
-    
 
     try:
         while keep_running:
             update_state(masterCon, followerCon, inputsFollower, inputsMaster)
-            time.sleep(0.001)  # Add a short delay to avoid overloading the CPU
+            time.sleep(0.001)
     except KeyboardInterrupt:
         print("\nInterrupted!")
-
         keep_running = False
 
-        #CLEANUP PHASE + DEBUGGING (add here the registers that should be reset upon bridge shutdown) 
+        # Reset registers
         inputsMaster.input_int_register_24 = 0
-        masterCon.send(inputsMaster)  
+        masterCon.send(inputsMaster)
         inputsFollower.input_int_register_24 = 0
-        followerCon.send(inputsFollower)  
+        followerCon.send(inputsFollower)
 
-        time.sleep(0.01) #allow time to actually change registers
+        time.sleep(0.01)
 
-
-        # Wait for the data collection thread to finish
-        if args.plot or args.plot:
+        # Wait for data collection thread to finish
+        if args.collection or args.tcp or args.q:
             data_thread.join()
-        if args.plot:
-            print("\nPlotting data...")
-            plot_tcp_data(CSV_FILE)  # Call the plot function when interrupted
+
+        # Plotting
+        if args.tcp:
+            print("\nPlotting TCP data...")
+            plot_tcp_data(CSV_FILE)
+        elif args.q:
+            print("\nPlotting joint position data...")
+            plot_joint_data("joint_data.csv")
+
         sys.exit()
 
 if __name__ == "__main__":
