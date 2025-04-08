@@ -2,7 +2,7 @@
 global inPosSync = 0
 global syncPos = [d2r(-91.71), d2r(-98.96), d2r(-126.22), d2r(-46.26), d2r(91.39), d2r(-1.78)]
 
-tWait = 0.001
+tWait = 0.0005
 
 def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
 
@@ -56,17 +56,44 @@ def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
 end
 
 def movej_partner(q, a=1.3, v=0.26, t=0, r=0):
+
+  popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  popup("partner is idle", "status")
+
   write_output_integer_register(25, 11)
   write_target(q)
   write_output_float_register(30, a)
   write_output_float_register(31, v)
   write_output_float_register(32, t)
   write_output_float_register(33, r)
-  global robotStatus = read_input_integer_register(25)
-  while (robotStatus != 2):
-    global robotStatus = read_input_integer_register(25)
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
   end
+
+  popup("command received by partner", "status")
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  popup("partner action done", "status")
+
+  # Reset master command register (stage 4)
   write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  popup("partner idle", "status")
+
 end
 
 def servoj_partner(q, a=0, v=0, t=0.002, lookahead_time=0.1, gain=300):
@@ -120,5 +147,16 @@ while (True):
   movel_partner(pose2)
   movel_partner(pose3)
   movel_partner(pose4)
+
+  q = syncPos
+  q1 = q + [d2r(20),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
+  q2 = q1 - [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
+  q3 = q2 + [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
+  q4 = q3 - [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
+  movej_partner(q, a=1.3, v=0.26, t=0, r=0) 
+  movej_partner(q1, a=1.3, v=0.26, t=0, r=0)
+  movej_partner(q2, a=1.3, v=0.26, t=0, r=0)
+  movej_partner(q3, a=1.3, v=0.26, t=0, r=0)
+  movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
 end
 
