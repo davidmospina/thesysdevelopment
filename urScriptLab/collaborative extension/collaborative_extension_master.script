@@ -120,12 +120,12 @@ end
 global programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
 
 
-# def partnerThread():
-#   while(True):
-#     # popup("qNext: " + to_str(qNext), "status")
-#     servoj_partner(qNext,0,0, 0.001,0.1, gain=1200)
-#   end
-# end
+def partnerThread():
+  while(True):
+    # popup("qNext: " + to_str(qNext), "status")
+    servoj_partner(qNext,0,0, 0.001,0.1, gain=1200)
+  end
+end
 
 ######### INITAL SYNC #########
 write_output_integer_register(25, 0)
@@ -136,14 +136,14 @@ write_output_integer_register(25, 0)
 
 
 while (True):
-  pose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
-  pose2 = pose
+  programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
+  pose2 = programPose
   pose2[2] = pose2[2] + 0.1 
   pose3 = pose2
   pose3[1] = pose3[1] + 0.1
   pose4 = pose3
   pose4[2] = pose4[2] - 0.1
-  movel_partner(pose)
+  movel_partner(programPose)
   movel_partner(pose2)
   movel_partner(pose3)
   movel_partner(pose4)
@@ -160,8 +160,8 @@ while (True):
   movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
 
 
-  movel(pose)
-  movel_partner(pose)
+  movel(programPose)
+  movel_partner(programPose)
   movel(pose2)
   movel_partner(pose2)
   movel(pose3)
@@ -182,6 +182,26 @@ while (True):
   movej(q4, a=1.3, v=0.26, t=0, r=0)
   movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
 
+  A=0.10
+  p=0
+  w=2*3.1416/60 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+  
+  poseInit = programPose
+  poseInit[0] = poseInit[0] + A
+  movel(poseInit)
+  movel_partner(poseInit, a=1.3, v=0.26, t=0, r=0)
+  qNext = get_inverse_kin(poseInit)
+  thread move_partnerThread(): partnerThread() end
+  thrd = run move_partnerThread()
+  while (p<=6.2831283):
+    p = p + w/500
+    deltaZ = A*sin(p)
+    deltaX = A*cos(p)
+    poseNext = p[0.079 + deltaX , -0.278, 0.189 + deltaZ ,0.0, 3.16, 0.04]
+    qNext = get_inverse_kin(poseNext)
+    servoj(qNext,0,0, 0.001,0.1, gain=1200)
+  end
+  kill thrd
 
 end
 
