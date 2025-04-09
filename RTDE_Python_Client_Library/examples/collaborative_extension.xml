@@ -25,12 +25,14 @@
 	<field name="output_double_register_31" type="DOUBLE"/>
 	<field name="output_double_register_32" type="DOUBLE"/>
 	<field name="output_double_register_33" type="DOUBLE"/>
+	<!-- Servo J gain parameter -->
+	<field name="output_double_register_34" type="DOUBLE"/>
 	<!-- I/O Output selector (number) -->
 	<field name="output_int_register_27" type="INT32"/>
 	<!-- I/O Input selector (number) -->
 	<field name="output_int_register_28" type="INT32"/>
 	<!-- I/O parameters -->
-	<field name="output_double_register_34" type="DOUBLE"/>
+	<field name="output_double_register_35" type="DOUBLE"/>
 	<field name="output_bit_register_64" type="BOOL"/>
 
 	</recipe>
@@ -97,8 +99,10 @@
 	<field name="input_double_register_31" type="DOUBLE"/>
 	<field name="input_double_register_32" type="DOUBLE"/>
 	<field name="input_double_register_33" type="DOUBLE"/>
-	<!-- I/O parameters -->
+		<!-- Servo J gain parameter -->
 	<field name="input_double_register_34" type="DOUBLE"/>
+	<!-- I/O parameters -->
+	<field name="input_double_register_35" type="DOUBLE"/>
 	<field name="input_bit_register_64" type="BOOL"/>
 	<!-- I/O Output parameter number elector-->
 	<field name="input_int_register_27" type="INT32"/>
