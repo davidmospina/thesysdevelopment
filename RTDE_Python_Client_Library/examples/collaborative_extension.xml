@@ -9,6 +9,7 @@
 	<field name="output_int_register_25" type="INT32"/>
 	<!-- Get tcp pose from master to plot-->
 	<field name="actual_TCP_pose" type="VECTOR6D"/>
+	<field name="actual_q" type="VECTOR6D"/>
 
 	<!-- FUNCTIONS -->	
 
@@ -69,6 +70,8 @@
 	<field name="output_int_register_25" type="INT32"/>
 	<!-- Get tcp pose from follower to plot-->
 	<field name="actual_TCP_pose" type="VECTOR6D"/>
+	<field name="actual_q" type="VECTOR6D"/>
+
 
 	<!-- I/O Boolean to send the value of I/O configurable input  -->
 	<field name="output_bit_register_65" type="BOOL"/>

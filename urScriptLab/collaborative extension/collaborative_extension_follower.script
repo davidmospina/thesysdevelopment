@@ -1,6 +1,5 @@
 # FOLLOWER SCRIPT
 
-
 #Define syncPos as desired
 global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
 #Initialization of Variables
@@ -19,48 +18,59 @@ def read_target():
     global moveTarget=tmpMoveTarget
 end
 
-
-######### INITAL SYNC #########
-
-write_output_integer_register(24, 0)
 write_output_integer_register(25, 0)
 
-movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
-
-while (inPosSync != 2 ):
-    global inPosSync = read_input_integer_register(24)
-end
-write_output_integer_register(24, 2)
-sync()
-
-
 ######### MAIN PROGRAM #########
-
 while (True):
   startTime = time(mode = 2)
   while(True):
-    write_output_integer_register(25,1)
     functionCode = read_input_integer_register(25)
     if functionCode != 12:
       if functionCode == 10:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+    
+        # Read parameters
         a = read_input_float_register(30)
         v = read_input_float_register(31)
         t = read_input_float_register(32)
         r = read_input_float_register(33)
         read_target()
-        # popup("v: " + to_str(v) + " ,a: " + to_str(a), "state", blocking = True)
-        movel(p[moveTarget[0],moveTarget[1],moveTarget[2],moveTarget[3],moveTarget[4],moveTarget[5]],a,v,t,r)
-        write_output_integer_register(25,2)
+    
+        # Execute movel (stage 3)
+        movel(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], a, v, t, r)
+    
+        # Signal done
+        write_output_integer_register(25, 3)
+    
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(0.002)
+        end
+    
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+
       elif functionCode == 11:
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
         a = read_input_float_register(30)
         v = read_input_float_register(31)
         t = read_input_float_register(32)
         r = read_input_float_register(33)
         read_target()
-        movej(moveTarget,a,v,t,r)    
-        write_output_integer_register(25,2)
+        movej(moveTarget,a,v,t,r)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(0.002)
+        end
+        write_output_integer_register(25, 0)
       end
-      sync()
+      # sync()
     else:
       if functionCode == 12:
         a = read_input_float_register(30)
