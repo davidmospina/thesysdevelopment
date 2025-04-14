@@ -25,7 +25,7 @@ while (True):
   startTime = time(mode = 2)
   while(True):
     functionCode = read_input_integer_register(25)
-    if functionCode != 12 and functionCode != 20 :
+    if functionCode != 12:
       if functionCode == 10:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -70,6 +70,7 @@ while (True):
         end
         write_output_integer_register(25, 0)
       end
+      # sync()
     else:
       if functionCode == 12:
         a = read_input_float_register(30)
@@ -80,7 +81,8 @@ while (True):
         read_target()
         servoj(moveTarget,a,v,t,lookahead_time,gain)
 
-      elif functionCode == 20:
+      elif functionCode == 12:
+        enter_critical
         a = read_input_float_register(30)
         v = read_input_float_register(31)
         t = read_input_float_register(32)
@@ -89,6 +91,7 @@ while (True):
         read_target()
         q = get_inverse_kin(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]])
         servoj(q,a,v,t,lookahead_time,gain)
+        exit_critical
       end
     end
   end

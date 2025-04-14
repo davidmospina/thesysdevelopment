@@ -290,7 +290,58 @@ def plot_joint_data(file_path):
     except Exception as e:
         print(f"Error: {e}")
 
+def plot_tcp_3d_view(file_path):
+    timestamps = []
+    master_x = []
+    master_y = []
+    master_z = []
+    follower_x = []
+    follower_y = []
+    follower_z = []
 
+    try:
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            headers = next(reader, None)
+            if headers is None:
+                print("CSV file is empty. No data to plot.")
+                return
+
+            for row in reader:
+                timestamps.append(float(row[0]))
+                master_x.append(float(row[1]))   # Master X
+                master_y.append(float(row[2]))   # Master Y
+                master_z.append(float(row[3]))   # Master Z
+                follower_x.append(float(row[4])) # Follower X
+                follower_y.append(float(row[5])) # Follower Y
+                follower_z.append(float(row[6])) # Follower Z
+
+        # --- Plot 1: Y vs Z ---
+        plt.figure(figsize=(8, 5))
+        plt.plot(master_x, master_z, label="Master X vs Z", color="blue")
+        plt.plot(follower_x, follower_z, label="Follower X vs Z", color="red")
+        plt.xlabel("X")
+        plt.ylabel("Z")
+        plt.title("TCP X vs Z")
+        plt.grid(True, linestyle='--', linewidth=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+        # --- Plot 2: Time vs X ---
+        plt.figure(figsize=(8, 5))
+        plt.plot(timestamps, master_y, label="Master Y over Time", color="blue")
+        plt.plot(timestamps, follower_y, label="Follower Y over Time", color="red")
+        plt.xlabel("Timestamp (s)")
+        plt.ylabel("Y")
+        plt.title("TCP Y over Time")
+        plt.grid(True, linestyle='--', linewidth=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 # Main execution function
 def main():
@@ -305,6 +356,7 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--tcp", action="store_true", help="Plot TCP data on exit")
     group.add_argument("--q", action="store_true", help="Plot joint position data on exit")
+    group.add_argument("--v3d", action="store_true", help="Plot TCP Y vs Z and Z vs Time")
 
     args = parser.parse_args()
 
@@ -337,7 +389,7 @@ def main():
     inputsMaster = masterCon.send_input_setup(master_in_names, master_in_types)
 
     # Start data collection in a separate thread based on selected type
-    if args.collection or args.tcp or args.q:
+    if args.collection or args.tcp or args.q or args.v3d:
         if args.q:
             data_thread = threading.Thread(target=collect_and_save_joint_data)
         else:
@@ -377,6 +429,9 @@ def main():
         elif args.q:
             print("\nPlotting joint position data...")
             plot_joint_data("joint_data.csv")
+        elif args.v3d:
+            print("\nPlotting 3D-style TCP views...")
+            plot_tcp_3d_view(CSV_FILE)
 
         sys.exit()
 
