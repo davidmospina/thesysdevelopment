@@ -6,6 +6,7 @@ global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(
 global moveTarget = [0, 0, 0, 0, 0, 0]
 global inPosSync = 0
 
+tWait = 0.0005
 
 def read_target():
     tmpMoveTarget=[0,0,0,0,0,0]
@@ -45,7 +46,7 @@ while (True):
     
         # Wait for master to reset to 0
         while (read_input_integer_register(25) != 0):
-          sleep(0.002)
+          sleep(tWait)
         end
     
         # Reset self to idle (stage 0)
@@ -63,12 +64,139 @@ while (True):
         
         # Signal done
         write_output_integer_register(25, 3)
-
         # Wait for master to reset to 0
         while (read_input_integer_register(25) != 0):
-          sleep(0.002)
+          sleep(tWait)
         end
         write_output_integer_register(25, 0)
+
+      elif functionCode == 13:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(27) #The number (id) of the output
+        l = read_input_boolean_register(64) #signal level
+        set_configurable_digital_out(n, l)
+        sleep(0.004)
+
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+  
+      elif functionCode == 14:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(27) #The number (id) of the output
+        l = read_input_boolean_register(64) #signal level
+        set_standard_digital_out(n, l)
+        sleep(0.004)
+        
+        # Signal done
+        write_output_integer_register(25, 3) 
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+  
+      elif functionCode == 15:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(27) #The number (id) of the output
+        av = read_input_float_register(35) #relative signal level for Analog Out
+        set_standard_analog_out(n,av)
+        sleep(0.004)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+  
+      elif functionCode == 16:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(27) #The number (id) of the output
+        l = read_input_boolean_register(64) #signal level
+        set_tool_digital_out(n,l)
+        sleep(0.004)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+  
+      elif functionCode == 17:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(28)
+        level = get_configurable_digital_in(n) #needs a boolean output register placeholder 
+        sleep(0.004)
+        write_output_boolean_register(65,level)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+      
+      elif functionCode == 18:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(28)
+        float = get_standard_analog_in(n) #needs a float output register placeholder
+        sleep(0.004)
+        write_output_float_register(37,float)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+
+      elif functionCode == 19:
+        # Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+
+        n = read_input_integer_register(28)
+        level = get_standard_digital_in(n) #needs a boolean output register placeholder 
+        sleep(0.004)
+        write_output_boolean_register(66,level)
+
+        # Signal done
+        write_output_integer_register(25, 3)
+    
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        # Reset self to idle (stage 0)
+        write_output_integer_register(25, 0)
+        
       end
     else:
       if functionCode == 12:

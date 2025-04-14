@@ -12,11 +12,6 @@ def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
     sleep(tWait)
   end
 
-  #popup("partner is idle", "status")
-
-
-
-
   # Send parameters
   write_target(pose)
   write_output_float_register(30, a)
@@ -32,16 +27,10 @@ def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
     sleep(tWait)
   end
 
-  #popup("command received by partner", "status")
-
-
   # Wait for follower to finish and signal DONE (stage 3)
   while (read_input_integer_register(25) != 3):
     sleep(tWait)
   end
-
-  #popup("partner action done", "status")
-
 
   # Reset master command register (stage 4)
   write_output_integer_register(25, 0)
@@ -50,9 +39,6 @@ def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
   while (read_input_integer_register(25) != 0):
     sleep(tWait)
   end
-
-  #popup("partner idle", "status")
-
 end
 
 def movej_partner(q, a=1.3, v=0.26, t=0, r=0):
@@ -136,6 +122,203 @@ def write_target(target):
   write_output_float_register(28, target[4])
   write_output_float_register(29, target[5])
 end
+
+def set_configurable_digital_out_partner(n, l):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 13)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_standard_digital_out_partner(n, l): 
+  # function accepts n range of [0:7] and l level True/False
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 14) #send command code
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_standard_analog_out_partner(n,f):
+  # function accepts n range of [0:1] and f equals the relative signal level between 0 and 1
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  
+  write_output_integer_register(27, n) # Select IO number
+  write_output_float_register(35, f) 
+  write_output_integer_register(25, 15) #send command code
+  
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_tool_digital_out_partner(n, l):
+  # function accepts n range of [0:1] and l level True/False
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 16)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def get_configurable_digital_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(28, n) # Select IO number to read from
+  write_output_integer_register(25, 17)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value1 = read_input_boolean_register(65) #read boolean value
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  return read_value1
+end
+
+def get_standard_analog_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(25, 18)
+  write_output_integer_register(28, n) # Select IO number
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value2 = read_input_float_register(37)
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  return read_value2
+end
+
+def get_standard_digital_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  write_output_integer_register(25, 19)
+  write_output_integer_register(28, n) # Select IO number
+  
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value3 = read_input_boolean_register(66) #boolean value
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  return read_value3
+end
+
+
 ######### USER PROGRAM FUNCTIONS AND VARIABLES #########
 
 #Initialization of Variables
@@ -162,6 +345,7 @@ movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
 
 
 while (True):
+
   programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
   # pose2 = programPose
   # pose2[2] = pose2[2] + 0.1 
