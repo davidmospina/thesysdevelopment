@@ -1,6 +1,8 @@
+# MASTER SCRIPT
+
 ######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
-global inPosSync = 0
-global syncPos = [d2r(-91.71), d2r(-98.96), d2r(-126.22), d2r(-46.26), d2r(91.39), d2r(-1.78)]
+add_frame("partnerFrame",p[0.60,0,0,3.1416],"base") #real distance is 70 
+
 
 tWait = 0.0005
 
@@ -109,7 +111,10 @@ def get_actual_tcp_pose_partner():
   rx = read_input_float_register(41)
   ry = read_input_float_register(42)
   rz = read_input_float_register(43)
-  pose = p[x,y,z,rx,ry,rz]
+  posePartnerFrame = p[x,y,z,rx,ry,rz]
+  # popup(posePartnerFrame, "pose Partner on partner base")
+
+  pose = convert_pose(posePartnerFrame, "partnerFrame", "base")
   return pose
 end 
 
@@ -410,15 +415,18 @@ end
 ######### INITAL SYNC #########
 write_output_integer_register(25, 0)
 
-move_frame_partner([0, 1, 0, 0, 0, 3.14], frame = )
+######### BEFORE PROGRAM #########
 
-movej(syncPos, a=1.3962634015954636, v=1.0471975511965976)
-movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+
+global initPoseMaster= [d2r(2.75), d2r(-51.20), d2r(-120.28), d2r(-8.5), d2r(86.75), d2r(0)]
+
+# movej(initPoseMaster, a=1.3962634015954636, v=1.0471975511965976)
+#movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
 
 
 # while (True):
 
-  programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
+  # programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
   # pose2 = programPose
   # pose2[2] = pose2[2] + 0.1 
   # pose3 = pose2
@@ -464,35 +472,52 @@ movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
   # movej(q4, a=1.3, v=0.26, t=0, r=0)
   # movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
 
-  aM=0.15
-  global aF=0.025
-  pM = 0
-  global pF = 0
-  wM=2*3.1416/120 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
-  global wF=2*3.1416/100 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+   aM=0.15
+   global aF=0.025
+   pM = 0
+   global pF = 0
+   wM=2*3.1416/120 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+   global wF=2*3.1416/100 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
   
-  poseInitM = programPose
-  poseInitF = programPose
-  poseInitM[0] = poseInitM[0] + aM
-  poseInitF[0] = poseInitF[0] + aM + aF
-  movel(poseInitM)
-  movel_partner(poseInitF, a=1.3, v=0.26, t=0, r=0)
-  qNext = get_inverse_kin(poseInitM)
-  thread move_partnerThread(): partnerThread() end
-  thrd = run move_partnerThread()
-  startTime = time()
-  while (pM<=6.28):
-    pM = pM + wM/500
-    deltaZM = aM*sin(pM)
-    deltaXM = aM*cos(pM)
-    poseNextM = p[0.079 + deltaXM , -0.278, 0.189 + deltaZM ,0.0, 3.16, 0.04]
-    qNext = get_inverse_kin(poseNextM)
-    servoj(qNext,0,0, 0.002,0.1, gain=1200)
-  end
-  endTime = time()
-  totalTime = endTime.sec - startTime.sec 
-  popup(totalTime, "Time:")
-  kill thrd
+  # poseInitM = programPose
+  # poseInitF = programPose
+  # poseInitM[0] = poseInitM[0] + aM
+  # poseInitF[0] = poseInitF[0] + aM + aF
+  # movel(poseInitM)
+  # movel_partner(poseInitF, a=1.3, v=0.26, t=0, r=0)
+  # qNext = get_inverse_kin(poseInitM)
+  # thread move_partnerThread(): partnerThread() end
+  # thrd = run move_partnerThread()
+  # startTime = time()
+  # while (pM<=6.28):
+  #   pM = pM + wM/500
+  #   deltaZM = aM*sin(pM)
+  #   deltaXM = aM*cos(pM)
+  #   poseNextM = p[0.079 + deltaXM , -0.278, 0.189 + deltaZM ,0.0, 3.16, 0.04]
+  #   qNext = get_inverse_kin(poseNextM)
+  #   servoj(qNext,0,0, 0.002,0.1, gain=1200)
+  # end
+  # endTime = time()
+  # totalTime = endTime.sec - startTime.sec 
+  # popup(totalTime, "Time:")
+  # kill thrd
+
+  poseMaster = get_actual_tcp_pose()
+  posePartner = get_actual_tcp_pose_partner()
+  # # popup(poseMaster, "pose Master")
+  # popup(posePartner, "pose Partner on master base", True)
+
+
+
+  # sleep(10)
+  poseMaster[0] = poseMaster[0] + 0.05
+  posePartner[0] = posePartner[0] + 0.05
+  # popup(poseMaster, "pose Master")
+  # # popup(posePartner, "pose Partner")
+
+  movel(poseMaster, a=1.2, v=0.25, t=0, r=0)
+  movel_partner(posePartner, a=1.2, v=0.25, t=0, r=0)
+
 
 # end
 

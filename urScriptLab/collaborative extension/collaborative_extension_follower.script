@@ -1,8 +1,8 @@
-# FOLLOWER SCRIPT
+# PARTNER SCRIPT
 
 #Initialization of Variables
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("collabFrame",p[0,0,0,0,0,0],"base")
+add_frame("masterFrame",p[0.75,0,0,0,0,3.1416],"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
 tWait = 0.0005
@@ -40,7 +40,7 @@ while (True):
         read_target()
     
         # Execute movel (stage 3)
-        movel(struct(pose = p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], frame = collabFrame), a, v, t, r)
+        movel(struct(pose = p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], frame = "masterFrame"), a, v, t, r)
     
         # Signal done
         write_output_integer_register(25, 3)
@@ -86,6 +86,7 @@ while (True):
       #     sleep(tWait)
       #   end
       #   write_output_integer_register(25, 0) 
+
       #move_collab_frame
       elif (functionCode == 21):
         #Acknowledge command received (stage 2)
@@ -93,9 +94,10 @@ while (True):
         read_target()
         frame = read_input_integer_register(30)
         if frame == 1:
-          move_frame("collabFrame",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"base")
-        else frame == 2:
-          move_frame("tcpMaster",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"collabFrame")
+          move_frame("masterFrame",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"base")
+        elif frame == 2:
+          move_frame("tcpMaster",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"masterFrame")
+        end
         sleep(0.004)
         # Signal done
         write_output_integer_register(25, 3)
