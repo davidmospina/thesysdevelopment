@@ -411,9 +411,9 @@ def main():
         keep_running = False
 
         # Reset registers
-        inputsMaster.input_int_register_24 = 0
+        inputsMaster.input_int_register_25 = 0
         masterCon.send(inputsMaster)
-        inputsFollower.input_int_register_24 = 0
+        inputsFollower.input_int_register_25 = 0
         followerCon.send(inputsFollower)
 
         time.sleep(0.01)

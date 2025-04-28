@@ -1,7 +1,7 @@
 # MASTER SCRIPT
 
 ######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
-add_frame("partnerFrame",p[0.60,0,0,3.1416],"base") #real distance is 70 
+add_frame("partnerFrame",p[0.55,-0.41,0,0,0,3.1416],"base") #real distance is 70 
 
 
 tWait = 0.0005
@@ -96,7 +96,8 @@ end
 
 def servoj_to_pose_partner(pose, a=0, v=0, t=0.002, lookahead_time=0.1, gain=300):
   write_output_integer_register(25, 20)
-  write_target(pose)
+  nextPosePartner = convert_pose(pose, "base", "partnerFrame")
+  write_target(nextPosePartner)
   write_output_float_register(30, a)
   write_output_float_register(31, v)
   write_output_float_register(32, t)
@@ -117,6 +118,47 @@ def get_actual_tcp_pose_partner():
   pose = convert_pose(posePartnerFrame, "partnerFrame", "base")
   return pose
 end 
+
+def movej_to_pose_partner(pose, a=1.3, v=0.26, t=0, r=0):
+
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_integer_register(25, 22)
+  write_target(pose)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  #popup("command received by partner", "status")
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  #popup("partner action done", "status")
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner idle", "status")
+
+end
 
 # def set_frame_partner(pose = [0,0,0,0,0,0]):
 
@@ -396,127 +438,75 @@ end
 
 ######### USER PROGRAM FUNCTIONS AND VARIABLES #########
 
-#Initialization of Variables
-global programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
-
-#function and threads
 def partnerThread():
- while(True):
-   # popup("qNext: " + to_str(qNext), "status")
-  pF = pF + wF/500
-  deltaZF = aF*sin(pF)
-  deltaXF = aF*cos(pF)
-  pose = get_actual_tcp_pose()
-  nextPosePartner = [pose[0] + deltaXF ,pose[1],pose[2] + deltaZF,pose[3],pose[4],pose[5]]
-  servoj_to_pose_partner(nextPosePartner,0,0, 0.002,0.1, gain=2000)
+  while(True):
+    poseMaster = get_actual_tcp_pose()
+    # posePartner = get_actual_tcp_pose_partner()
+    # nextPosPartner = p[poseMaster[0],poseMaster[1],poseMaster[2],posePartner[3],posePartner[4],posePartner[5]]
+    rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
+    nextPosPartner = pose_trans(poseMaster, rotation180Z)
+    servoj_to_pose_partner(nextPosPartner,0,0, 0.002,0.1, gain=2000)
+  end
  end
-end
 
 ######### INITAL SYNC #########
 write_output_integer_register(25, 0)
 
 ######### BEFORE PROGRAM #########
 
-
-global initPoseMaster= [d2r(2.75), d2r(-51.20), d2r(-120.28), d2r(-8.5), d2r(86.75), d2r(0)]
-
+#Initialization of Variables
+# global firstPoseMaster = p[0.2956, -0.1151, 0.4632, d2r(-69.14), d2r(69.37), d2r(-69.14)]
+# global secondPoseMaster = p[0.3764, -0.1151, 0.368, d2r(-69.14), d2r(69.37), d2r(-69.14)]
+# global firstPosePartner = p[0.2956, -0.1151, 0.4632, d2r(-69.14), d2r(-69.37), d2r(69.14)]
+# global secondPosePartner = p[0.3764, -0.1151, 0.368, d2r(-69.14), d2r(-69.37), d2r(69.14)]
 # movej(initPoseMaster, a=1.3962634015954636, v=1.0471975511965976)
 #movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
 
 
 # while (True):
 
-  # programPose = p[0.079, -0.278,0.189,0.0, 3.16, 0.04]
-  # pose2 = programPose
-  # pose2[2] = pose2[2] + 0.1 
-  # pose3 = pose2
-  # pose3[1] = pose3[1] + 0.1
-  # pose4 = pose3
-  # pose4[2] = pose4[2] - 0.1
-  # movel_partner(programPose)
-  # movel_partner(pose2)
-  # movel_partner(pose3)
-  # movel_partner(pose4)
+poseMaster = get_actual_tcp_pose()
+# nextPosPartner = p[poseMaster[0],poseMaster[1],poseMaster[2],posePartner[3],posePartner[4],posePartner[5]]
+rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
+nextPosPartner = pose_trans(poseMaster, rotation180Z)
+movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
 
-  # q = syncPos
-  # q1 = q + [d2r(20),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
-  # q2 = q1 - [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
-  # q3 = q2 + [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
-  # q4 = q3 - [d2r(10),d2r(0),d2r(0),d2r(0),d2r(0),d2r(0)]
-  # movej_partner(q, a=1.3, v=0.26, t=0, r=0) 
-  # movej_partner(q1, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q2, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q3, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
+# printNextPosPartner = [nextPosPartner[0],nextPosPartner[1],nextPosPartner[2],r2d(nextPosPartner[3]),r2d(nextPosPartner[4]),r2d(nextPosPartner[5])]
+# request_boolean_from_primary_client(printNextPosPartner)
 
+freedrive_mode([1,1,1,1,1,1])
 
-  # movel(programPose)
-  # movel_partner(programPose)
-  # movel(pose2)
-  # movel_partner(pose2)
-  # movel(pose3)
-  # movel_partner(pose3)
-  # movel(pose4)
-  # movel_partner(pose4)
+thread move_partnerThread(): partnerThread() end
+thrd = run move_partnerThread()
+request_boolean_from_primary_client("end program")
+
+kill thrd
 
 
 
-  # movej(q, a=1.3, v=0.26, t=0, r=0) 
-  # movej_partner(q, a=1.3, v=0.26, t=0, r=0) 
-  # movej(q1, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q1, a=1.3, v=0.26, t=0, r=0)
-  # movej(q2, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q2, a=1.3, v=0.26, t=0, r=0)
-  # movej(q3, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q3, a=1.3, v=0.26, t=0, r=0)
-  # movej(q4, a=1.3, v=0.26, t=0, r=0)
-  # movej_partner(q4, a=1.3, v=0.26, t=0, r=0)
+# movel(secondPoseMaster, a=1.2, v=0.25, t=0, r=0)
+# pose_partner = get_actual_tcp_pose_partner()
 
-   aM=0.15
-   global aF=0.025
-   pM = 0
-   global pF = 0
-   wM=2*3.1416/120 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
-   global wF=2*3.1416/100 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
-  
-  # poseInitM = programPose
-  # poseInitF = programPose
-  # poseInitM[0] = poseInitM[0] + aM
-  # poseInitF[0] = poseInitF[0] + aM + aF
-  # movel(poseInitM)
-  # movel_partner(poseInitF, a=1.3, v=0.26, t=0, r=0)
-  # qNext = get_inverse_kin(poseInitM)
-  # thread move_partnerThread(): partnerThread() end
-  # thrd = run move_partnerThread()
-  # startTime = time()
-  # while (pM<=6.28):
-  #   pM = pM + wM/500
-  #   deltaZM = aM*sin(pM)
-  #   deltaXM = aM*cos(pM)
-  #   poseNextM = p[0.079 + deltaXM , -0.278, 0.189 + deltaZM ,0.0, 3.16, 0.04]
-  #   qNext = get_inverse_kin(poseNextM)
-  #   servoj(qNext,0,0, 0.002,0.1, gain=1200)
-  # end
-  # endTime = time()
-  # totalTime = endTime.sec - startTime.sec 
-  # popup(totalTime, "Time:")
-  # kill thrd
+# movel_partner(firstPosePartner, a=1.2, v=0.25, t=0, r=0)
+# movel_partner(secondPosePartner, a=1.2, v=0.25, t=0, r=0)
+# movej(thirdPoseMaster, a=1.2, v=0.25, t=0, r=0)
 
-  poseMaster = get_actual_tcp_pose()
-  posePartner = get_actual_tcp_pose_partner()
+
+  # poseMaster = get_actual_tcp_pose()
+  # posePartner = get_actual_tcp_pose_partner()
+  # # # popup(poseMaster, "pose Master")
+  # # popup(posePartner, "pose Partner on master base", True)
+
+
+
+  # # sleep(10)
+  # poseMaster[0] = poseMaster[0] + 0.05
+  # posePartner[0] = posePartner[0] + 0.05
   # # popup(poseMaster, "pose Master")
-  # popup(posePartner, "pose Partner on master base", True)
+  # # # popup(posePartner, "pose Partner")
 
-
-
-  # sleep(10)
-  poseMaster[0] = poseMaster[0] + 0.05
-  posePartner[0] = posePartner[0] + 0.05
-  # popup(poseMaster, "pose Master")
-  # # popup(posePartner, "pose Partner")
-
-  movel(poseMaster, a=1.2, v=0.25, t=0, r=0)
-  movel_partner(posePartner, a=1.2, v=0.25, t=0, r=0)
+  # movel(poseMaster, a=1.2, v=0.25, t=0, r=0)
+  # movel_partner(posePartner, a=1.2, v=0.25, t=0, r=0)
 
 
 # end

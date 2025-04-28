@@ -2,7 +2,7 @@
 
 #Initialization of Variables
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("masterFrame",p[0.75,0,0,0,0,3.1416],"base")
+add_frame("masterFrame",p[0.55,-0.41,0,0,0,3.1416],"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
 tWait = 0.0005
@@ -233,10 +233,31 @@ while (True):
           sleep(tWait)
         end
         # Reset self to idle (stage 0)
+
+      #movej_to_pose
+      elif functionCode == 22:
+        # popup("partner is idle", "status")
+
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+        a = read_input_float_register(30)
+        v = read_input_float_register(31)
+        t = read_input_float_register(32)
+        r = read_input_float_register(33)
+        read_target()
+        movej(struct(pose = p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], frame = "masterFrame"),a,v,t,r)
+        
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
         write_output_integer_register(25, 0)
         
       end
     else:
+      #servoJ
       if functionCode == 12:
         a = read_input_float_register(30)
         v = read_input_float_register(31)
@@ -245,7 +266,7 @@ while (True):
         gain = read_input_float_register(34)
         read_target()
         servoj(moveTarget,a,v,t,lookahead_time,gain)
-
+      #servoJ_to_pose:
       elif functionCode == 20:
         a = read_input_float_register(30)
         v = read_input_float_register(31)
