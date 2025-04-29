@@ -436,6 +436,59 @@ def get_standard_digital_in_partner(n):
   return read_value3
 end
 
+def external_speed_control_partner(a, t):
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_integer_register(25, 11)
+  write_output_float_register(30, a)
+  write_output_float_register(31, t)
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+end
+
+
+def external_speed_control(a,t):
+
+  speed_threshold = 1e-4  # deadzone to ignore tiny input noise
+  speed_control_active = True
+  while speed_control_active:
+      # Read linear velocities (vx, vy, vz)
+      vx = read_input_float_register(10)
+      vy = read_input_float_register(11)
+      vz = read_input_float_register(12)
+  
+      # Read angular velocities (rx, ry, rz)
+      rx = read_input_float_register(13)
+      ry = read_input_float_register(14)
+      rz = read_input_float_register(15)
+  
+  
+  
+      # Build the velocity vector
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+  
+      # Check if velocity vector is "significant"
+      speed_mag = norm(speed_vector)
+  
+      if speed_mag > speed_threshold:
+          speedl(speed_vector, a=a, t=t)
+      else:
+          speedl([0, 0, 0, 0, 0, 0], a=acceleration, t=timestep)
+      end
+      leave = read_input_integer_register(10)
+      if leave == 1:
+        speed_control_active = False
+      end
+  end
+end
+
 
 ######### USER PROGRAM FUNCTIONS AND VARIABLES #########
 
@@ -455,45 +508,14 @@ write_output_integer_register(25, 0)
 
 ######### BEFORE PROGRAM #########
 
-acceleration = 0.5  # m/s^2
+acceleration = 0.9  # m/s^2
 timestep = 0.05     # seconds between updates
-speed_threshold = 1e-4  # deadzone to ignore tiny input noise
+
 
 
 ######### MAIN PROGRAM #########
 
-while True:
-    # Read linear velocities (vx, vy, vz)
-    vx = read_input_float_register(10)
-    vy = read_input_float_register(11)
-    vz = read_input_float_register(12)
-
-    # Read angular velocities (rx, ry, rz)
-    rx = read_input_float_register(13)
-    ry = read_input_float_register(14)
-    rz = read_input_float_register(15)
-
-
-
-    # Build the velocity vector
-    speed_vector = [vx, vy, vz, rx, ry, rz]
-
-    # Check if velocity vector is "significant"
-    speed_mag = norm(speed_vector)
-    request_boolean_from_primary_client(speed_mag)
-
-    if speed_mag > speed_threshold:
-        request_boolean_from_primary_client("dentro")
-        speedl(speed_vector, a=acceleration, t=timestep)
-    else:
-        speedl([0, 0, 0, 0, 0, 0], a=acceleration, t=timestep)
-    end
-    sleep(timestep)
-end
-
-
-
-
+external_speed_control(acceleration, timestep)
 
 # end
 

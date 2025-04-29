@@ -59,6 +59,10 @@
 	<field name="input_double_register_42" type="DOUBLE"/>
 	<field name="input_double_register_43" type="DOUBLE"/>
 
+	
+	<!-- SPEEDL deactivate button-->
+	<field name="input_int_register_10" type="INT32"/>
+	
 	<!-- SPEEDL from controller-->
 	<field name="input_double_register_10" type="DOUBLE"/>
 	<field name="input_double_register_11" type="DOUBLE"/>
@@ -102,6 +106,9 @@
 	<field name="input_int_register_25" type="INT32"/>
 
 	<!-- FUNCTIONS -->
+
+	<!-- SPEEDL deactivate button-->
+	<field name="input_int_register_10" type="INT32"/>
 
 	<!-- SPEEDL from controller-->
 	<field name="input_double_register_10" type="DOUBLE"/>

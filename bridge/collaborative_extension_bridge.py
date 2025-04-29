@@ -1,27 +1,3 @@
-#!/usr/bin/env python
-# Copyright (c) 2016-2022, Universal Robots A/S,
-# All rights reserved.
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#    * Redistributions of source code must retain the above copyright
-#      notice, this list of conditions and the following disclaimer.
-#    * Redistributions in binary form must reproduce the above copyright
-#      notice, this list of conditions and the following disclaimer in the
-#      documentation and/or other materials provided with the distribution.
-#    * Neither the name of the Universal Robots A/S nor the names of its
-#      contributors may be used to endorse or promote products derived
-#      from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL UNIVERSAL ROBOTS A/S BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 import sys
 import argparse  # Import argparse for command-line arguments
 sys.path.append("..")
@@ -35,6 +11,7 @@ import matplotlib
 # matplotlib.use('TkAgg')
 import pygame
 import time
+import signal
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -71,6 +48,14 @@ masterTCP = None
 followerTCP = None
 keep_running = True
 lock = threading.Lock()
+
+def handle_sigint(signum, frame):
+    global keep_running
+    print("\nSIGINT received. Shutting down gracefully...")
+    pygame.quit()
+    keep_running = False
+
+signal.signal(signal.SIGINT, handle_sigint)
 
 pygame.init()
 pygame.joystick.init()
@@ -125,23 +110,27 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         link_bool(follower_in_bool,stateMaster,inputsFollower)
         link_float(follower_in_float,stateMaster,inputsFollower)
 
-        controller_speeds = read_controller()
-        link_external_controller_inputs(inputsFollower,inputsMaster, controller_speeds)
-
+        controller_speeds , a_button = read_controller()
+        link_external_controller_inputs(inputsFollower,inputsMaster, controller_speeds, a_button)
 
     
     followerCon.send(inputsFollower)
     masterCon.send(inputsMaster)
     keep_running = True
 
+def apply_deadzone(value, threshold=0.08):
+    return value if abs(value) >= threshold else 0.0
+
+
 def read_controller():
     pygame.event.pump()
 
-    # Read axes
-    left_stick_x = joystick.get_axis(0)
-    left_stick_y = joystick.get_axis(1)
-    right_stick_x = joystick.get_axis(3)
-    right_stick_y = joystick.get_axis(4)
+    # Raw input with deadzone
+    left_stick_x = apply_deadzone(joystick.get_axis(0))
+    left_stick_y = apply_deadzone(joystick.get_axis(1))
+    right_stick_x = apply_deadzone(joystick.get_axis(3))
+    right_stick_y = apply_deadzone(joystick.get_axis(4))
+    a_button = joystick.get_button(0)
 
     lt = (joystick.get_axis(2) + 1) / 2
     rt = (joystick.get_axis(5) + 1) / 2
@@ -149,7 +138,7 @@ def read_controller():
     lb = joystick.get_button(4)
     rb = joystick.get_button(5)
 
-    # Map to speed values
+    # Velocity mapping (no repeated deadzone!)
     vx = left_stick_x * MAX_LINEAR_SPEED
     vy = -left_stick_y * MAX_LINEAR_SPEED
     vz = (rt - lt) * MAX_LINEAR_SPEED
@@ -158,7 +147,7 @@ def read_controller():
     ry = right_stick_x * MAX_ROTATION_SPEED
     rz = (rb - lb) * MAX_ROTATION_SPEED
 
-    speed = [vx, vy, vz, rx, ry, rz]
+    speed = [vx, vy, vz, rx, ry, rz], a_button
 
     print(speed)
     return speed
@@ -183,13 +172,15 @@ def link_vector(vector, low_index, high_index, destination):
         setattr(destination, f"input_double_register_{i}", vector[i - low_index])
     return destination
 
-def link_external_controller_inputs(inputsFollower,inputsMaster,controller_speeds):
+def link_external_controller_inputs(inputsFollower,inputsMaster,controller_speeds, a_button):
     inputsMaster.input_double_register_10 = controller_speeds[0]
     inputsMaster.input_double_register_11 = controller_speeds[1]
     inputsMaster.input_double_register_12 = controller_speeds[2]
     inputsMaster.input_double_register_13 = controller_speeds[3]
     inputsMaster.input_double_register_14 = controller_speeds[4]
     inputsMaster.input_double_register_15 = controller_speeds[5]
+    inputsMaster.input_int_register_10 = a_button
+    
 
     inputsFollower.input_double_register_10 = controller_speeds[0]
     inputsFollower.input_double_register_11 = controller_speeds[1]
@@ -197,6 +188,9 @@ def link_external_controller_inputs(inputsFollower,inputsMaster,controller_speed
     inputsFollower.input_double_register_13 = controller_speeds[3]
     inputsFollower.input_double_register_14 = controller_speeds[4]
     inputsFollower.input_double_register_15 = controller_speeds[5]
+    inputsFollower.input_double_register_15 = controller_speeds[5]
+    inputsFollower.input_int_register_10 = a_button
+
 
 
 def collect_and_save_tcp_data():
@@ -466,33 +460,33 @@ def main():
     try:
         while keep_running:
             update_state(masterCon, followerCon, inputsFollower, inputsMaster)
-            time.sleep(0.001)
-    except KeyboardInterrupt:
-        print("\nInterrupted!")
-        keep_running = False
+    finally:
+        print("\nExiting...")
 
-        # Reset registers
         inputsMaster.input_int_register_25 = 0
         masterCon.send(inputsMaster)
         inputsFollower.input_int_register_25 = 0
         followerCon.send(inputsFollower)
 
+        # pygame.quit()
+
         time.sleep(0.01)
 
-        # Wait for data collection thread to finish
         if args.collection or args.tcp or args.q:
-            data_thread.join()
+            data_thread.join(timeout=2.0)
 
-        # Plotting
-        if args.tcp:
-            print("\nPlotting TCP data...")
-            plot_tcp_data(CSV_FILE)
-        elif args.q:
-            print("\nPlotting joint position data...")
-            plot_joint_data("joint_data.csv")
-        elif args.v3d:
-            print("\nPlotting 3D-style TCP views...")
-            plot_tcp_3d_view(CSV_FILE)
+        try:
+            if args.tcp:
+                print("\nPlotting TCP data...")
+                plot_tcp_data(CSV_FILE)
+            elif args.q:
+                print("\nPlotting joint position data...")
+                plot_joint_data("joint_data.csv")
+            elif args.v3d:
+                print("\nPlotting 3D-style TCP views...")
+                plot_tcp_3d_view(CSV_FILE)
+        except Exception as e:
+            print(f"Plotting interrupted or failed: {e}")
 
         sys.exit()
 
