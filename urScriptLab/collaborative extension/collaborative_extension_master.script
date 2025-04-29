@@ -1,6 +1,7 @@
 # MASTER SCRIPT
 
 ######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
+reset_world_model()
 add_frame("partnerFrame",p[0.55,-0.41,0,0,0,3.1416],"base") #real distance is 70 
 
 
@@ -454,59 +455,44 @@ write_output_integer_register(25, 0)
 
 ######### BEFORE PROGRAM #########
 
-#Initialization of Variables
-# global firstPoseMaster = p[0.2956, -0.1151, 0.4632, d2r(-69.14), d2r(69.37), d2r(-69.14)]
-# global secondPoseMaster = p[0.3764, -0.1151, 0.368, d2r(-69.14), d2r(69.37), d2r(-69.14)]
-# global firstPosePartner = p[0.2956, -0.1151, 0.4632, d2r(-69.14), d2r(-69.37), d2r(69.14)]
-# global secondPosePartner = p[0.3764, -0.1151, 0.368, d2r(-69.14), d2r(-69.37), d2r(69.14)]
-# movej(initPoseMaster, a=1.3962634015954636, v=1.0471975511965976)
-#movej_partner(syncPos, a=1.3962634015954636, v=1.0471975511965976)
+acceleration = 0.5  # m/s^2
+timestep = 0.05     # seconds between updates
+speed_threshold = 1e-4  # deadzone to ignore tiny input noise
 
 
-# while (True):
+######### MAIN PROGRAM #########
 
-poseMaster = get_actual_tcp_pose()
-# nextPosPartner = p[poseMaster[0],poseMaster[1],poseMaster[2],posePartner[3],posePartner[4],posePartner[5]]
-rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
-nextPosPartner = pose_trans(poseMaster, rotation180Z)
-movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
+while True:
+    # Read linear velocities (vx, vy, vz)
+    vx = read_input_float_register(10)
+    vy = read_input_float_register(11)
+    vz = read_input_float_register(12)
 
-# printNextPosPartner = [nextPosPartner[0],nextPosPartner[1],nextPosPartner[2],r2d(nextPosPartner[3]),r2d(nextPosPartner[4]),r2d(nextPosPartner[5])]
-# request_boolean_from_primary_client(printNextPosPartner)
-
-freedrive_mode([1,1,1,1,1,1])
-
-thread move_partnerThread(): partnerThread() end
-thrd = run move_partnerThread()
-request_boolean_from_primary_client("end program")
-
-kill thrd
+    # Read angular velocities (rx, ry, rz)
+    rx = read_input_float_register(13)
+    ry = read_input_float_register(14)
+    rz = read_input_float_register(15)
 
 
 
-# movel(secondPoseMaster, a=1.2, v=0.25, t=0, r=0)
-# pose_partner = get_actual_tcp_pose_partner()
+    # Build the velocity vector
+    speed_vector = [vx, vy, vz, rx, ry, rz]
 
-# movel_partner(firstPosePartner, a=1.2, v=0.25, t=0, r=0)
-# movel_partner(secondPosePartner, a=1.2, v=0.25, t=0, r=0)
-# movej(thirdPoseMaster, a=1.2, v=0.25, t=0, r=0)
+    # Check if velocity vector is "significant"
+    speed_mag = norm(speed_vector)
+    request_boolean_from_primary_client(speed_mag)
+
+    if speed_mag > speed_threshold:
+        request_boolean_from_primary_client("dentro")
+        speedl(speed_vector, a=acceleration, t=timestep)
+    else:
+        speedl([0, 0, 0, 0, 0, 0], a=acceleration, t=timestep)
+    end
+    sleep(timestep)
+end
 
 
-  # poseMaster = get_actual_tcp_pose()
-  # posePartner = get_actual_tcp_pose_partner()
-  # # # popup(poseMaster, "pose Master")
-  # # popup(posePartner, "pose Partner on master base", True)
 
-
-
-  # # sleep(10)
-  # poseMaster[0] = poseMaster[0] + 0.05
-  # posePartner[0] = posePartner[0] + 0.05
-  # # popup(poseMaster, "pose Master")
-  # # # popup(posePartner, "pose Partner")
-
-  # movel(poseMaster, a=1.2, v=0.25, t=0, r=0)
-  # movel_partner(posePartner, a=1.2, v=0.25, t=0, r=0)
 
 
 # end

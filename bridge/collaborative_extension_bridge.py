@@ -83,8 +83,8 @@ joystick.init()
 print(f"Initialized Controller: {joystick.get_name()}")
 
 # Scaling factors (adjust if needed)
-MAX_LINEAR_SPEED = 0.25  # [m/s]
-MAX_ROTATION_SPEED = 1.0 # [rad/s]
+MAX_LINEAR_SPEED = 0.75  # [m/s]
+MAX_ROTATION_SPEED = 2.0 # [rad/s]
 
 # Function to safely update global state variables
 def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
@@ -158,7 +158,10 @@ def read_controller():
     ry = right_stick_x * MAX_ROTATION_SPEED
     rz = (rb - lb) * MAX_ROTATION_SPEED
 
-    return [vx, vy, vz, rx, ry, rz]
+    speed = [vx, vy, vz, rx, ry, rz]
+
+    print(speed)
+    return speed
 
 def link_int(reg_indexes,source,destination):
     for reg in reg_indexes:
