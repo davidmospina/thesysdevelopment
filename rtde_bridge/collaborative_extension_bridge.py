@@ -16,6 +16,7 @@ import signal
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pprint
+import math
 
 CONFIG_FILE = "collaborative_extension.xml"
 
@@ -55,7 +56,7 @@ def handle_sigint(signum, frame):
     pygame.quit()
     keep_running = False
 
-signal.signal(signal.SIGINT, handle_sigint)
+# # signal.signal(signal.SIGINT, handle_sigint)
 
 pygame.init()
 pygame.joystick.init()
@@ -85,10 +86,10 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
     #SET HERE THE USED REGISTERS
     master_in_int = [24,25]
     master_in_bool = [65,66]
-    master_in_float = [10,11,12,13,14,15,37]
+    master_in_float = [37]
     follower_in_int = [24, 25, 27, 28]
     follower_in_bool = [64]
-    follower_in_float = [10,11,12,13,14,15,24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37] #38 to 43 also used
+    follower_in_float = [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37] #38 to 43 also used
 
     # Lock shared state
     with lock:
@@ -100,7 +101,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         link_int(master_in_int,stateFollower,inputsMaster)
         link_bool(master_in_bool,stateFollower,inputsMaster)
         link_float(master_in_float,stateFollower,inputsMaster)
-        link_vector(followerTCP, 38, 43, inputsMaster)
+        # link_vector(followerTCP, 38, 43, inputsMaster)
 
         # UPDATE FOLLOWER IN REGISTERS BASED ON MASTER OUTPUTS
         masterTCP = stateMaster.actual_TCP_pose #needed for plot
@@ -121,19 +122,26 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
 def apply_deadzone(value, threshold=0.08):
     return value if abs(value) >= threshold else 0.0
 
+def scale_input(x, scale=2.0):
+    return math.copysign(abs(x) ** scale, x)
+
 
 def read_controller():
     pygame.event.pump()
 
-    # Raw input with deadzone
-    left_stick_x = apply_deadzone(joystick.get_axis(0))
-    left_stick_y = apply_deadzone(joystick.get_axis(1))
-    right_stick_x = apply_deadzone(joystick.get_axis(3))
-    right_stick_y = apply_deadzone(joystick.get_axis(4))
-    a_button = joystick.get_button(0)
+
+    # Example use inside read_controller():
+    left_stick_x = scale_input(apply_deadzone(joystick.get_axis(0)))
+    left_stick_y = scale_input(apply_deadzone(joystick.get_axis(1)))
+    right_stick_x = scale_input(apply_deadzone(joystick.get_axis(3)))
+    right_stick_y = scale_input(apply_deadzone(joystick.get_axis(4)))
 
     lt = (joystick.get_axis(2) + 1) / 2
     rt = (joystick.get_axis(5) + 1) / 2
+    lt = scale_input(apply_deadzone(lt), scale=3.0)
+    rt = scale_input(apply_deadzone(rt), scale=3.0)
+
+    a_button = joystick.get_button(0)
 
     lb = joystick.get_button(4)
     rb = joystick.get_button(5)
@@ -173,23 +181,22 @@ def link_vector(vector, low_index, high_index, destination):
     return destination
 
 def link_external_controller_inputs(inputsFollower,inputsMaster,controller_speeds, a_button):
-    inputsMaster.input_double_register_10 = controller_speeds[0]
-    inputsMaster.input_double_register_11 = controller_speeds[1]
-    inputsMaster.input_double_register_12 = controller_speeds[2]
-    inputsMaster.input_double_register_13 = controller_speeds[3]
-    inputsMaster.input_double_register_14 = controller_speeds[4]
-    inputsMaster.input_double_register_15 = controller_speeds[5]
-    inputsMaster.input_int_register_10 = a_button
+    inputsMaster.input_double_register_38 = controller_speeds[0]
+    inputsMaster.input_double_register_39 = controller_speeds[1]
+    inputsMaster.input_double_register_40 = controller_speeds[2]
+    inputsMaster.input_double_register_41 = controller_speeds[3]
+    inputsMaster.input_double_register_42 = controller_speeds[4]
+    inputsMaster.input_double_register_43 = controller_speeds[5]
+    inputsMaster.input_int_register_30 = a_button
     
 
-    inputsFollower.input_double_register_10 = controller_speeds[0]
-    inputsFollower.input_double_register_11 = controller_speeds[1]
-    inputsFollower.input_double_register_12 = controller_speeds[2]
-    inputsFollower.input_double_register_13 = controller_speeds[3]
-    inputsFollower.input_double_register_14 = controller_speeds[4]
-    inputsFollower.input_double_register_15 = controller_speeds[5]
-    inputsFollower.input_double_register_15 = controller_speeds[5]
-    inputsFollower.input_int_register_10 = a_button
+    inputsFollower.input_double_register_38 = controller_speeds[0]
+    inputsFollower.input_double_register_39 = controller_speeds[1]
+    inputsFollower.input_double_register_40 = controller_speeds[2]
+    inputsFollower.input_double_register_41 = controller_speeds[3]
+    inputsFollower.input_double_register_42 = controller_speeds[4]
+    inputsFollower.input_double_register_43 = controller_speeds[5]
+    inputsFollower.input_int_register_30 = a_button
 
 
 

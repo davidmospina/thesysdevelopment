@@ -454,22 +454,44 @@ def external_speed_control_partner(a, t):
   end
 end
 
+def virtual_tcp_control_partner(a, t):
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_float_register(30, a)
+  write_output_float_register(31, t)
+  write_output_integer_register(25, 24)
+
+  # Wait for follower to ACK (stage 2)
+  # popup("waiting for 2", "status")
+
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+  # popup("got the 2", "status")
+
+end
+
 
 def external_speed_control(a,t):
 
   speed_threshold = 1e-4  # deadzone to ignore tiny input noise
   speed_control_active = True
   while speed_control_active:
+      
       # Read linear velocities (vx, vy, vz)
-      vx = read_input_float_register(10)
-      vy = read_input_float_register(11)
-      vz = read_input_float_register(12)
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
   
       # Read angular velocities (rx, ry, rz)
-      rx = read_input_float_register(13)
-      ry = read_input_float_register(14)
-      rz = read_input_float_register(15)
-  
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
   
   
       # Build the velocity vector
@@ -483,12 +505,56 @@ def external_speed_control(a,t):
       else:
           speedl([0, 0, 0, 0, 0, 0], a=a, t=t)
       end
-      leave = read_input_integer_register(10)
+      leave = read_input_integer_register(30)
       if leave == 1:
         speed_control_active = False
       end
   end
 end
+
+
+def virtual_tcp_control():
+  timestep = 0.002
+  lookahead_time = 0.1
+  gain = 500
+  deadzone = 1e-4
+
+  tcp_control_active = True
+  virtual_tcp = get_actual_tcp_pose()
+
+  while tcp_control_active:
+      # Read controller inputs
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
+
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+      speed_mag = norm(speed_vector)
+
+      if speed_mag > deadzone:
+          # Apply delta to virtual TCP pose
+          delta_pose = p[vx * timestep, vy * timestep, vz * timestep, rx * timestep, ry * timestep, rz * timestep]
+          virtual_tcp = pose_add(virtual_tcp, delta_pose)
+
+          # Calculate joint target and send servoj
+          q_target = get_inverse_kin(virtual_tcp)
+          servoj(q_target, t=timestep, lookahead_time=lookahead_time, gain=gain)
+      else:
+          # Hold current position
+          servoj(get_actual_joint_positions(), t=timestep, lookahead_time=lookahead_time, gain=gain)
+      end
+
+      # Exit condition (same as external_speed_control)
+      leave = read_input_integer_register(30)
+      if leave == 1:
+          tcp_control_active = False
+      end
+  end
+end
+
 
 
 ######### USER PROGRAM FUNCTIONS AND VARIABLES #########
@@ -519,8 +585,8 @@ poseMaster = get_actual_tcp_pose()
 rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
 nextPosPartner = pose_trans(poseMaster, rotation180Z)
 movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
-external_speed_control_partner(acceleration, timestep)
-external_speed_control(acceleration, timestep)
+virtual_tcp_control_partner(acceleration, timestep)
+virtual_tcp_control()
 
 
 # end
