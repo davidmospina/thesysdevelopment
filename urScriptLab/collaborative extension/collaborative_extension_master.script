@@ -444,9 +444,10 @@ def external_speed_control_partner(a, t):
 
   #popup("partner is idle", "status")
 
-  write_output_integer_register(25, 11)
   write_output_float_register(30, a)
   write_output_float_register(31, t)
+  write_output_integer_register(25, 23)
+
   # Wait for follower to ACK (stage 2)
   while (read_input_integer_register(25) != 2):
     sleep(tWait)
@@ -480,7 +481,7 @@ def external_speed_control(a,t):
       if speed_mag > speed_threshold:
           speedl(speed_vector, a=a, t=t)
       else:
-          speedl([0, 0, 0, 0, 0, 0], a=acceleration, t=timestep)
+          speedl([0, 0, 0, 0, 0, 0], a=a, t=t)
       end
       leave = read_input_integer_register(10)
       if leave == 1:
@@ -514,8 +515,13 @@ timestep = 0.05     # seconds between updates
 
 
 ######### MAIN PROGRAM #########
-
+poseMaster = get_actual_tcp_pose()
+rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
+nextPosPartner = pose_trans(poseMaster, rotation180Z)
+movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
+external_speed_control_partner(acceleration, timestep)
 external_speed_control(acceleration, timestep)
+
 
 # end
 

@@ -1,8 +1,10 @@
 # PARTNER SCRIPT
 
 #Initialization of Variables
+reset_world_model()
+
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("masterFrame",p[0.55,-0.41,0,0,0,3.1416],"base")
+add_frame("masterFrame",p[0.55,-0.39,0,0,0,3.1416],"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
 tWait = 0.0005
@@ -36,24 +38,28 @@ def external_speed_control(a,t):
   
   
       # Build the velocity vector
-      speed_vector_master_frame = [vx, vy, vz, rx, ry, rz]
+      speed_vector = [vx, vy, vz, rx, ry, rz]
   
       # Check if velocity vector is "significant"
-      speed_mag = norm(speed_vector_master_frame)
+      speed_mag = norm(speed_vector)
   
       if speed_mag > speed_threshold:
-          speed_vector = convert_pose(speed_vector_master_frame,"masterFrame", "base") 
-          speedl(speed_vector, a=a, t=t)
+          speedl(struct(vel=speed_vector, frame="masterFrame") , a=a, t=t)
       else:
-          speedl([0, 0, 0, 0, 0, 0], a=acceleration, t=timestep)
+          speedl([0, 0, 0, 0, 0, 0], a=a, t=t)
       end
       leave = read_input_integer_register(10)
       if leave == 1:
         speed_control_active = False
+      end
   end
 end
 
-write_output_integer_register(25, 0)
+ write_output_integer_register(25, 0)
+# a = 0.9  # m/s^2
+# t = 0.05     # seconds between updates
+
+# external_speed_control(a,t)
 
 ######### MAIN PROGRAM #########
 while (True):
@@ -289,15 +295,14 @@ while (True):
           sleep(tWait)
         end
         write_output_integer_register(25, 0)
+        request_boolean_from_primary_client("finish move_j")
 
       elif functionCode == 23:
-        # popup("partner is idle", "status")
 
         #Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
         a = read_input_float_register(30)
         t = read_input_float_register(31)
-        read_target()
         external_speed_control(a,t)
         
         
