@@ -4,7 +4,7 @@
 reset_world_model()
 
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("masterFrame",p[0.55,-0.39,0,0,0,3.1416],"base")
+add_frame("masterFrame",p[0.55,-0.396,0.002,0,0,3.1416],"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
 tWait = 0.0005
@@ -75,15 +75,13 @@ def virtual_tcp_control():
       speed_mag = norm(speed_vector)
 
       if speed_mag > deadzone:
-          # Apply delta to virtual TCP pose
-          delta_pose_master = p[vx * timestep, vy * timestep, vz * timestep, rx * timestep, ry * timestep, rz * timestep]
-          delta_pose_partner =  convert_pose(delta_pose_master,"masterFrame","base")
-          virtual_tcp = pose_add(virtual_tcp, delta_pose_partner)
+        #Apply delta to virtual TCP pose
+        delta_pose = p[vx * timestep, vy * timestep, vz * timestep, rx * timestep, ry * timestep, rz * timestep]
+        virtual_tcp = pose_trans(virtual_tcp, delta_pose)
 
-          # Calculate joint target and send servoj
-
-          q_target = get_inverse_kin(virtual_tcp)
-          servoj(q_target, t=timestep, lookahead_time=lookahead_time, gain=gain)
+        # Calculate joint target and send servoj
+        q_target = get_inverse_kin(virtual_tcp)
+        servoj(q_target, t=timestep, lookahead_time=lookahead_time, gain=gain)
       else:
           # Hold current position
           servoj(get_actual_joint_positions(), t=timestep, lookahead_time=lookahead_time, gain=gain)
@@ -337,6 +335,8 @@ while (True):
         end
         write_output_integer_register(25, 0)
 
+      
+      #external_speed_control      
       elif functionCode == 23:
 
         #Acknowledge command received (stage 2)
@@ -345,6 +345,8 @@ while (True):
         t = read_input_float_register(31)
         external_speed_control(a,t)
 
+
+      #virtual_tcp_control      
       elif functionCode == 24:
 
         #Acknowledge command received (stage 2)
@@ -373,7 +375,8 @@ while (True):
         lookahead_time = read_input_float_register(33)
         gain = read_input_float_register(34)
         read_target()
-        q = get_inverse_kin(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]])
+        nextPose = convert_pose(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], "base", "masterFrame")
+        q = get_inverse_kin(nextPose)
         servoj(q,a,v,t,lookahead_time,gain)
       end
     end
