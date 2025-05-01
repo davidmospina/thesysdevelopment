@@ -554,16 +554,27 @@ def virtual_tcp_control():
           kill thrd2
 
       end
-  endc
+  end
+end
+
+
+
+######### USER PROGRAM FUNCTIONS AND VARIABLES #########
+
+def partnerThread():
+  while(True):
+    rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
+    nextPosPartner = pose_trans(virtual_tcp, rotation180Z)
+    servoj_to_pose_partner(nextPosPartner, a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
   end
  end
 
- def masterThread():
-  while(True):
-    q_target = get_inverse_kin(virtual_tcp)
-    servoj(q_target,a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
-  end
- end
+def masterThread():
+while(True):
+  q_target = get_inverse_kin(virtual_tcp)
+  servoj(q_target,a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+end
+end
 
 ######### INITAL SYNC #########
 write_output_integer_register(25, 0)
@@ -582,7 +593,7 @@ poseMaster = get_actual_tcp_pose()
 rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
 nextPosPartner = pose_trans(poseMaster, rotation180Z)
 movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
-#virtual_tcp_control()
+virtual_tcp_control()
 request_boolean_from_primary_client("end program")
 
 
