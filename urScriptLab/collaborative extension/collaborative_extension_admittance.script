@@ -252,8 +252,8 @@ admittance_control(
   mass_list = [11, 11, 11, 0.5, 0.5, 0.5],
   damping_list = [10, 10, 10, 1, 1, 1],
   stiffness_params = [0, 0, 0, 0, 0, 0],
-  dead_band = [1.0, 0.025, 1.0, 0.05],
-  compliance_vector = [0, 0, 0, 1, 1, 1],
+  dead_band = [1.0, 0.025, 4.0, 0.1],
+  compliance_vector = [1, 1, 1, 1, 1, 1],
   base_to_compliance_frame = p[0, 0, 0, 0, 0, 0],
   tool_flange_to_compliance_center = p[0, 0, 0.055, 0, 0, 0],
   target_wrench = [0, 0, 0, 0, 0, 0]
