@@ -375,7 +375,7 @@ while (True):
         lookahead_time = read_input_float_register(33)
         gain = read_input_float_register(34)
         read_target()
-        nextPose = convert_pose(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], "base", "masterFrame")
+        nextPose = convert_pose(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], "masterFrame", "base")
         q = get_inverse_kin(nextPose)
         servoj(q,a,v,t,lookahead_time,gain)
       end
