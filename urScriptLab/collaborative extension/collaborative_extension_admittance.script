@@ -247,12 +247,12 @@ end
 
 # Run the admittance control function
 admittance_control(
-  mass_scaling = 0.6,
-  damping_scaling = 0.6,
-  mass_list = [11, 11, 11, 0.5, 0.5, 0.5],
-  damping_list = [10, 10, 10, 1, 1, 1],
+  mass_scaling = 1.0,
+  damping_scaling = 1.2,
+  mass_list = [8, 8, 8, 0.5, 0.5, 0.5],
+  damping_list = [15, 15, 15, 1.5, 1.5, 1.5],
   stiffness_params = [0, 0, 0, 0, 0, 0],
-  dead_band = [1.0, 0.025, 4.0, 0.1],
+  dead_band = [1.0, 0.1, 1.0, 0.2],
   compliance_vector = [1, 1, 1, 1, 1, 1],
   base_to_compliance_frame = p[0, 0, 0, 0, 0, 0],
   tool_flange_to_compliance_center = p[0, 0, 0.055, 0, 0, 0],
