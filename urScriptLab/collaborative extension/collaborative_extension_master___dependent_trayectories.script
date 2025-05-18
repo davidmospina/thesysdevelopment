@@ -1,5 +1,8 @@
 # MASTER SCRIPT
 
+
+#ALWAYS move the robot to: [391.1,-195.9,375.3,52.16,-142,06,146.58]
+
 ######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
 reset_world_model()
 add_frame("partnerFrame",p[0.673,-0.396,-0.002,0,0,3.1416],"base") #real distance is 70 
@@ -516,12 +519,12 @@ def virtual_tcp_control():
   timestep = 0.002
   lookahead_time = 0.1
   gain = 500
-  deadzone = 1e-4
+  deadzone = 1e-4  
 
   tcp_control_active = True
-  thread move_partnerThread(): partnerThread() end
+  # thread move_partnerThread(): partnerThread() end
   thread move_masterThread(): masterThread() end
-  thrd1 = run move_partnerThread()
+  # thrd1 = run move_partnerThread()
   thrd2 = run move_masterThread()
 
 
@@ -546,11 +549,11 @@ def virtual_tcp_control():
 
       end
 
-      # Exit condition (same as external_speed_control)
+      # Exit condition if A button is pressed external motion of vitual tcp is disable
       leave = read_input_integer_register(30)
       if leave == 1:
           tcp_control_active = False
-          kill thrd1
+          # kill thrd1
           kill thrd2
 
       end
@@ -563,17 +566,60 @@ end
 
 def partnerThread():
   while(True):
-    rotation180Z = p[0, 0, 0, 0, 3.1416, 0]
-    nextPosPartner = pose_trans(virtual_tcp, rotation180Z)
-    servoj_to_pose_partner(nextPosPartner, a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+    servoj_to_pose_partner(poseToMoveP, a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
   end
  end
 
 def masterThread():
-while(True):
-  q_target = get_inverse_kin(virtual_tcp)
-  servoj(q_target,a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+  while(True):
+    q = get_inverse_kin(poseToMoveM)
+    servoj(q,a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+  end
 end
+
+
+def trajectory_control():
+  aM=0.07
+  aP=0.0425
+  pM = 0
+  pP = 0
+  wM=2*3.1416/40 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+  wP=2*3.1416/10 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+  
+  centerM = get_actual_tcp_pose()
+  global poseToMoveM = pose_trans(centerM,p[aM,0,0,0,0,0])
+  movej(poseToMoveM)
+  initPoseP = convert_pose(p[aP,0,0,0,0,0], "tcp", "base")
+  rotation180Y = p[0, 0, 0, 0, 3.1416, 0]
+  global poseToMoveP = pose_trans(initPoseP, rotation180Y)
+  movej_to_pose_partner(poseToMoveP, a=1.3, v=0.26, t=0, r=0)
+  thread move_partnerThread(): partnerThread() end
+  thread move_masterThread(): masterThread() end
+  thrd1 = run move_partnerThread()
+  thrd2 = run move_masterThread()
+  startTime = time()
+
+  while (pM<=6.28):
+    pM = pM + wM/500
+    deltaYM = aM*sin(pM)
+    deltaxM = aM*cos(pM)
+    nextPoseM  = pose_trans(centerM,p[deltaxM,deltaYM,0,0,0,0])
+    pP = pP + wP/500
+    deltaYP = aP*sin(pP)
+    deltaXP = aP*cos(pP)
+    nextPoseP = p[deltaXP ,deltaYP,0,0,0,0]
+    nextPoseP = convert_pose(nextPoseP, "tcp", "base")
+    global poseToMoveP = pose_trans(nextPoseP, rotation180Y)
+    global poseToMoveM = nextPoseM
+    sync()
+  end
+  endTime = time()
+  kill thrd1
+  kill thrd2
+  movej(centerM)
+  # movej_to_pose_partner(initPoseP, a=1.3, v=0.26, t=0, r=0)
+  totalTime = endTime.sec - startTime.sec 
+  popup(totalTime, "Time:")
 end
 
 ######### INITAL SYNC #########
@@ -581,18 +627,17 @@ write_output_integer_register(25, 0)
 
 ######### BEFORE PROGRAM #########
 
-global virtual_tcp  = p[0,0,0,0,0,0]
+#Initialization of Variables
 
 
 
 ######### MAIN PROGRAM #########
-poseMaster = get_actual_tcp_pose()
-rotation180Y = p[0, 0, 0, 0, 3.1416, 0]
-nextPosPartner = pose_trans(poseMaster, rotation180Y)
-movej_to_pose_partner(nextPosPartner, a=1.3, v=0.26, t=0, r=0)
-virtual_tcp_control()
-request_boolean_from_primary_client("end program")
+
+# while (True):
+
+trajectory_control()
+
+
 
 
 # end
-

@@ -33,6 +33,9 @@ import socket
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 import matplotlib
+import numpy as np
+from scipy.spatial.transform import Rotation as R
+
 matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
@@ -290,16 +293,25 @@ def plot_joint_data(file_path):
     except Exception as e:
         print(f"Error: {e}")
 
-def plot_tcp_3d_view(file_path):
+def pose_to_matrix(pose):
+    T = np.eye(4)
+    T[:3, 3] = pose[:3]
+    T[:3, :3] = R.from_rotvec(pose[3:]).as_matrix()
+    return T
+
+def plot_tcp_3d_view(file_path, follower_to_master_pose):
+    """
+    Plots TCP data from a CSV file, transforming follower TCPs into the master frame
+    using the provided 1x6 pose vector [x, y, z, rx, ry, rz].
+    """
     timestamps = []
-    master_x = []
-    master_y = []
-    master_z = []
-    follower_x = []
-    follower_y = []
-    follower_z = []
+    master_x, master_y, master_z = [], [], []
+    follower_x, follower_y, follower_z = [], [], []
 
     try:
+        # Convert follower_to_master_pose to 4x4 matrix
+        T_follower_to_master = pose_to_matrix(follower_to_master_pose)
+
         with open(file_path, mode='r') as file:
             reader = csv.reader(file)
             headers = next(reader, None)
@@ -309,17 +321,27 @@ def plot_tcp_3d_view(file_path):
 
             for row in reader:
                 timestamps.append(float(row[0]))
-                master_x.append(float(row[1]))   # Master X
-                master_y.append(float(row[2]))   # Master Y
-                master_z.append(float(row[3]))   # Master Z
-                follower_x.append(float(row[4])) # Follower X
-                follower_y.append(float(row[5])) # Follower Y
-                follower_z.append(float(row[6])) # Follower Z
 
-        # --- Plot 1: Y vs Z ---
+                # Master TCP (already in master frame)
+                master_x.append(float(row[1]))
+                master_y.append(float(row[2]))
+                master_z.append(float(row[3]))
+
+                # Follower TCP (convert to master frame)
+                fx = float(row[4])
+                fy = float(row[5])
+                fz = float(row[6])
+                follower_tcp = np.array([fx, fy, fz, 1.0])  # homogeneous
+
+                transformed_tcp = T_follower_to_master @ follower_tcp
+                follower_x.append(transformed_tcp[0])
+                follower_y.append(transformed_tcp[1])
+                follower_z.append(transformed_tcp[2])
+
+        # --- Plot 1: X vs Z ---
         plt.figure(figsize=(8, 5))
         plt.plot(master_x, master_z, label="Master X vs Z", color="blue")
-        plt.plot(follower_x, follower_z, label="Follower X vs Z", color="red")
+        plt.plot(follower_x, follower_z, label="Follower X vs Z (Transformed)", color="red")
         plt.xlabel("X")
         plt.ylabel("Z")
         plt.title("TCP X vs Z")
@@ -328,10 +350,10 @@ def plot_tcp_3d_view(file_path):
         plt.tight_layout()
         plt.show()
 
-        # --- Plot 2: Time vs X ---
+        # --- Plot 2: Time vs Y ---
         plt.figure(figsize=(8, 5))
         plt.plot(timestamps, master_y, label="Master Y over Time", color="blue")
-        plt.plot(timestamps, follower_y, label="Follower Y over Time", color="red")
+        plt.plot(timestamps, follower_y, label="Follower Y over Time (Transformed)", color="red")
         plt.xlabel("Timestamp (s)")
         plt.ylabel("Y")
         plt.title("TCP Y over Time")
@@ -424,14 +446,15 @@ def main():
 
         # Plotting
         if args.tcp:
-            print("\nPlotting TCP data...")
             plot_tcp_data(CSV_FILE)
         elif args.q:
             print("\nPlotting joint position data...")
             plot_joint_data("joint_data.csv")
         elif args.v3d:
             print("\nPlotting 3D-style TCP views...")
-            plot_tcp_3d_view(CSV_FILE)
+            pose_follower_to_master = [0.684288043, -0.398951501, 0.004334566, -0.035435978, -0.002129936, 3.13116691]
+
+            plot_tcp_3d_view(CSV_FILE,pose_follower_to_master)
 
         sys.exit()
 
