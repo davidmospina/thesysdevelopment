@@ -299,18 +299,24 @@ def pose_to_matrix(pose):
     T[:3, :3] = R.from_rotvec(pose[3:]).as_matrix()
     return T
 
-def plot_tcp_3d_view(file_path, follower_to_master_pose):
+def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
     """
-    Plots TCP data from a CSV file, transforming follower TCPs into the master frame
-    using the provided 1x6 pose vector [x, y, z, rx, ry, rz].
+    Plots TCP data:
+    - Transforms follower TCPs into master frame
+    - Rotates both TCPs into the master TCP's local coordinate frame
+    - Plots: X vs Y and Z vs Time
     """
     timestamps = []
     master_x, master_y, master_z = [], [], []
     follower_x, follower_y, follower_z = [], [], []
 
     try:
-        # Convert follower_to_master_pose to 4x4 matrix
+        # Transform follower base to master base
         T_follower_to_master = pose_to_matrix(follower_to_master_pose)
+
+        # Get inverse rotation of master TCP
+        tcp_rotvec_rad = np.deg2rad(master_tcp_pose[3:])  # convert degrees to radians
+        R_tcp_inv = R.from_rotvec(tcp_rotvec_rad).inv().as_matrix()
 
         with open(file_path, mode='r') as file:
             reader = csv.reader(file)
@@ -322,41 +328,42 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose):
             for row in reader:
                 timestamps.append(float(row[0]))
 
-                # Master TCP (already in master frame)
-                master_x.append(float(row[1]))
-                master_y.append(float(row[2]))
-                master_z.append(float(row[3]))
+                # --- Master TCP ---
+                master_point = np.array([float(row[1]), float(row[2]), float(row[3])])
+                rotated_master = R_tcp_inv @ master_point
+                master_x.append(rotated_master[0])
+                master_y.append(rotated_master[1])
+                master_z.append(rotated_master[2])
 
-                # Follower TCP (convert to master frame)
-                fx = float(row[4])
-                fy = float(row[5])
-                fz = float(row[6])
+                # --- Follower TCP ---
+                fx, fy, fz = float(row[4]), float(row[5]), float(row[6])
                 follower_tcp = np.array([fx, fy, fz, 1.0])  # homogeneous
 
                 transformed_tcp = T_follower_to_master @ follower_tcp
-                follower_x.append(transformed_tcp[0])
-                follower_y.append(transformed_tcp[1])
-                follower_z.append(transformed_tcp[2])
+                rotated_follower = R_tcp_inv @ transformed_tcp[:3]
+                follower_x.append(rotated_follower[0])
+                follower_y.append(rotated_follower[1])
+                follower_z.append(rotated_follower[2])
 
-        # --- Plot 1: X vs Z ---
+        # --- Plot 1: X vs Y (trajectory shape) ---
         plt.figure(figsize=(8, 5))
-        plt.plot(master_x, master_z, label="Master X vs Z", color="blue")
-        plt.plot(follower_x, follower_z, label="Follower X vs Z (Transformed)", color="red")
+        plt.plot(master_x, master_y, label="Master X vs Y", color="blue")
+        plt.plot(follower_x, follower_y, label="Follower X vs Y (Transformed)", color="red")
         plt.xlabel("X")
-        plt.ylabel("Z")
-        plt.title("TCP X vs Z")
+        plt.ylabel("Y")
+        plt.title("TCP X vs Y (Local TCP Frame)")
         plt.grid(True, linestyle='--', linewidth=0.5)
         plt.legend()
         plt.tight_layout()
         plt.show()
 
-        # --- Plot 2: Time vs Y ---
+        # --- Plot 2: Z vs Time ---
         plt.figure(figsize=(8, 5))
-        plt.plot(timestamps, master_y, label="Master Y over Time", color="blue")
-        plt.plot(timestamps, follower_y, label="Follower Y over Time (Transformed)", color="red")
+        plt.plot(timestamps, master_z, label="Master Z over Time", color="blue")
+        plt.plot(timestamps, follower_z, label="Follower Z over Time (Transformed)", color="red")
         plt.xlabel("Timestamp (s)")
-        plt.ylabel("Y")
-        plt.title("TCP Y over Time")
+        plt.ylabel("Z")
+        plt.title("TCP Z over Time (Local TCP Frame)")
         plt.grid(True, linestyle='--', linewidth=0.5)
         plt.legend()
         plt.tight_layout()
@@ -364,6 +371,59 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose):
 
     except Exception as e:
         print(f"Error: {e}")
+
+def plot_tcp_3d_view_master_base(file_path, follower_to_master_pose):
+    """
+    Plots 3D TCP trajectories from the master's point of view.
+    - Transforms follower TCPs into the master base frame.
+    - Plots both master and follower trajectories in 3D.
+    """
+    master_x, master_y, master_z = [], [], []
+    follower_x, follower_y, follower_z = [], [], []
+
+    try:
+        # Convert follower→master pose to transformation matrix
+        T_follower_to_master = pose_to_matrix(follower_to_master_pose)
+
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            headers = next(reader, None)
+            if headers is None:
+                print("CSV file is empty. No data to plot.")
+                return
+
+            for row in reader:
+                # --- Master TCP (already in master base) ---
+                master_x.append(float(row[1]))
+                master_y.append(float(row[2]))
+                master_z.append(float(row[3]))
+
+                # --- Follower TCP ---
+                fx, fy, fz = float(row[4]), float(row[5]), float(row[6])
+                follower_tcp = np.array([fx, fy, fz, 1.0])  # homogeneous
+                transformed_tcp = T_follower_to_master @ follower_tcp
+                follower_x.append(transformed_tcp[0])
+                follower_y.append(transformed_tcp[1])
+                follower_z.append(transformed_tcp[2])
+
+        # --- 3D Plot ---
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(master_x, master_y, master_z, label="Master TCP Trajectory", color="blue")
+        ax.plot(follower_x, follower_y, follower_z, label="Follower TCP Trajectory (Transformed)", color="red")
+
+        ax.set_xlabel("X (m)")
+        ax.set_ylabel("Y (m)")
+        ax.set_zlabel("Z (m)")
+        ax.set_title("3D TCP Trajectories in Master Base Frame")
+        ax.legend()
+        ax.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 # Main execution function
 def main():
@@ -378,7 +438,8 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--tcp", action="store_true", help="Plot TCP data on exit")
     group.add_argument("--q", action="store_true", help="Plot joint position data on exit")
-    group.add_argument("--v3d", action="store_true", help="Plot TCP Y vs Z and Z vs Time")
+    group.add_argument("--v3d", action="store_true", help="Plot TCP x vs y and Z vs Time respect master tcp")
+    group.add_argument("--v3d_bm", action="store_true", help="Plot TCP respect maste base")
 
     args = parser.parse_args()
 
@@ -411,7 +472,7 @@ def main():
     inputsMaster = masterCon.send_input_setup(master_in_names, master_in_types)
 
     # Start data collection in a separate thread based on selected type
-    if args.collection or args.tcp or args.q or args.v3d:
+    if args.collection or args.tcp or args.q or args.v3d or args.v3d_bm:
         if args.q:
             data_thread = threading.Thread(target=collect_and_save_joint_data)
         else:
@@ -454,9 +515,22 @@ def main():
             print("\nPlotting 3D-style TCP views...")
             pose_follower_to_master = [0.684288043, -0.398951501, 0.004334566, -0.035435978, -0.002129936, 3.13116691]
 
-            plot_tcp_3d_view(CSV_FILE,pose_follower_to_master)
+            master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
+
+            plot_tcp_3d_view("tcp_data.csv", pose_follower_to_master, master_tcp_pose)
+
+        elif args.v3d_bm:
+            print("\nPlotting 3D-style TCP views...")
+            pose_follower_to_master = [0.684288043, -0.398951501, 0.004334566, -0.035435978, -0.002129936, 3.13116691]
+
+            master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
+
+            plot_tcp_3d_view_master_base("tcp_data.csv", pose_follower_to_master)
 
         sys.exit()
+
+    
+    
 
 if __name__ == "__main__":
     main()
