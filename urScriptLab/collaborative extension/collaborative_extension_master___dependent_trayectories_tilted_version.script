@@ -587,15 +587,15 @@ end
 
 
 def trajectory_control():
-  aM = 0.07
-  aP = 0.0425
+  aM = 0.07        # Radius of master's circular path
+  aP = 0.0425      # Radius of partner's circular path
   pM = 0
   pP = 0
-  wM = 2*3.1416 / 40
-  wP = 2*3.1416 / 10
+  wM = 2 * 3.1416 / 40   # Master circle speed
+  wP = 2 * 3.1416 / 10   # Partner circle speed
 
-  max_tilt = d2r(30)  # max tilt in radians
-  tilt_freq = 2 * 3.1416 / 40 # one full up/down tilt cycle every 12 seconds
+  max_tilt = d2r(30)      # Max tilt angle in radians
+  tilt_freq = 2 * 3.1416 / 12 # Full tilt cycle every 12 seconds
   sweep_phase = 0
 
   centerM = get_actual_tcp_pose()
@@ -617,24 +617,23 @@ def trajectory_control():
     pM = pM + wM / 500
     pP = pP + wP / 500
 
-    # Master circle in XY
-    deltaYM = aM * sin(pM)
+    # Master trajectory - local circle
     deltaXM = aM * cos(pM)
+    deltaYM = aM * sin(pM)
+    flat_deltaM = p[deltaXM, deltaYM, 0, 0, 0, 0]
 
-    # Compute current tilt angle for this step
+    # Compute dynamic tilt
     sweep_phase = sweep_phase + tilt_freq / 500
     tilt_angle = max_tilt * sin(sweep_phase)
+    tilt_pose = p[0, 0, 0, tilt_angle, 0, 0]
 
-    # Rotate the delta vector by tilt
-    flat_deltaM = p[deltaXM, deltaYM, 0, 0, 0, 0]
-    tilted_deltaM = rotate_vector_x(flat_deltaM, tilt_angle)
+    # Apply tilt in TCP frame, then apply to base pose
+    tilted_pose_in_tcp = pose_trans(tilt_pose, flat_deltaM)
+    nextPoseM = pose_trans(centerM, tilted_pose_in_tcp)
 
-    # Apply from fixed center
-    nextPoseM = pose_trans(centerM, tilted_deltaM)
-
-    # Partner circle (flat)
-    deltaYP = aP * sin(pP)
+    # Partner trajectory (flat circle around master TCP)
     deltaXP = aP * cos(pP)
+    deltaYP = aP * sin(pP)
     nextPoseP = p[deltaXP, deltaYP, 0, 0, 0, 0]
     nextPoseP = convert_pose(nextPoseP, "tcp", "base")
     global poseToMoveP = pose_trans(nextPoseP, rotation180Y)
@@ -647,9 +646,11 @@ def trajectory_control():
   kill thrd1
   kill thrd2
   movej(centerM)
+
   totalTime = endTime.sec - startTime.sec
   popup(totalTime, "Time:")
 end
+
 
 ######### INITAL SYNC #########
 write_output_integer_register(25, 0)
