@@ -30,4 +30,5 @@ T_A_B = T_A_TCP @ np.linalg.inv(T_rel) @ np.linalg.inv(T_B_TCP)
 
 # Convert to pose vector
 pose_A_B = matrix_to_pose(T_A_B)
+np.set_printoptions(precision=7, suppress=True) #to get all decimals number
 print(pose_A_B)
