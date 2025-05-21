@@ -1,7 +1,7 @@
 # MASTER SCRIPT
 
 
-#ALWAYS move the robot to: [391.1,-195.9,375.3,52.16,-142,06,146.58]
+#ALWAYS move the robot to: [391.1,-195.9,375.3,52.16,-142.06,146.58]
 
 ######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
 reset_world_model()
