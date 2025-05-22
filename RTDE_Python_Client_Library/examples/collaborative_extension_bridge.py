@@ -151,7 +151,7 @@ def collect_and_save_tcp_data():
         writer.writerow(["Timestamp (s)", "Master TCP X", "Master TCP Y", "Master TCP Z", "Follower TCP X", "Follower TCP Y", "Follower TCP Z"])
 
         while keep_running:
-            time.sleep(0.5)  # Wait for 0.5 seconds
+            time.sleep(0.02)  # Wait for 0.5 seconds
 
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
