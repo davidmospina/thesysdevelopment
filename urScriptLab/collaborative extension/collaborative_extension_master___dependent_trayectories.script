@@ -583,8 +583,8 @@ def trajectory_control():
   aP=0.0425
   pM = 0
   pP = 0
-  wM=2*3.1416/30 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
-  wP=2*3.1416/5 #30 is the limit but for some reson it is going twice times faster than it should in reality with w = 2pi/60 is taking 30 seconds instead of 60
+  wM=2*3.1416/30 
+  wP=2*3.1416/5 
   
   centerM = get_actual_tcp_pose()
   global poseToMoveM = pose_trans(centerM,p[aM,0,0,0,0,0])
