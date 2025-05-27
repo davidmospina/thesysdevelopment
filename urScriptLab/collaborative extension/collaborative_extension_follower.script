@@ -4,7 +4,7 @@
 reset_world_model()
 
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("masterFrame",p[0.6826794, -0.3961288,  0.0015, 0.0, 0.0,  3.1446]
+add_frame("masterFrame",p[0.6816794, -0.3941288,  0.002, 0.0, 0.0,  3.1410]
 ,"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 

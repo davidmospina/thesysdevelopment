@@ -84,24 +84,24 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
         xP_ideal = xM_ideal + aP * np.cos(wP * t)
         yP_ideal = yM_ideal + aP * np.sin(wP * t)
 
-        # --- DTW Distance Calculation ---
-        real_master_xy = list(zip(master_x, master_y))
-        ideal_master_xy = list(zip(xM_ideal, yM_ideal))
-        real_follower_xy = list(zip(follower_x, follower_y))
-        ideal_follower_xy = list(zip(xP_ideal, yP_ideal))
+        # # --- DTW Distance Calculation ---
+        # real_master_xy = list(zip(master_x, master_y))
+        # ideal_master_xy = list(zip(xM_ideal, yM_ideal))
+        # real_follower_xy = list(zip(follower_x, follower_y))
+        # ideal_follower_xy = list(zip(xP_ideal, yP_ideal))
 
-        master_dtw_dist, _ = fastdtw(real_master_xy, ideal_master_xy, dist=euclidean)
-        follower_dtw_dist, _ = fastdtw(real_follower_xy, ideal_follower_xy, dist=euclidean)
+        # master_dtw_dist, _ = fastdtw(real_master_xy, ideal_master_xy, dist=euclidean)
+        # # follower_dtw_dist, _ = fastdtw(real_follower_xy, ideal_follower_xy, dist=euclidean)
 
-        print(f"DTW Distance (Master Real vs Ideal):   {master_dtw_dist:.4f} meters")
-        print(f"DTW Distance (Follower Real vs Ideal): {follower_dtw_dist:.4f} meters")
+        # print(f"DTW Distance (Master Real vs Ideal):   {master_dtw_dist:.4f} meters")
+        # print(f"DTW Distance (Follower Real vs Ideal): {follower_dtw_dist:.4f} meters")
 
         # --- Plot 1: X vs Y (trajectory shape) ---
         plt.figure(figsize=(8, 8))
         plt.plot(master_x, master_y, label="Master X vs Y (Measured)", color="blue")
         plt.plot(follower_x, follower_y, label="Follower X vs Y (Transformed)", color="red")
-        # plt.plot(xM_ideal, yM_ideal, label="Ideal Master Trajectory", linestyle='--', linewidth=1.5)
-        # plt.plot(xP_ideal, yP_ideal, label="Ideal Partner Trajectory", linestyle='--', linewidth=1.5)
+        plt.plot(xM_ideal, yM_ideal, label="Ideal Master Trajectory", linestyle='--', linewidth=1.5, color = "yellow")
+        plt.plot(xP_ideal, yP_ideal, label="Ideal Partner Trajectory", linestyle='--', linewidth=1.5)
         plt.xlabel("X (m)")
         plt.ylabel("Y (m)")
         plt.title("TCP X vs Y (Measured vs Ideal Trajectories)")
@@ -131,13 +131,9 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
 
 
 print("\nPlotting 3D-style TCP views...")
-# pose_follower_to_master = [0.6816794, -0.3941288,  0.002, 0.0, 0.0,  3.1410]
+pose_follower_to_master = [0.6816794, -0.3941288,  0.002, 0.0, 0.0,  3.1410]
 
-# master_tcp_pose = [385.86, -59.3, 377.83, 82.391331, -145.13021, 144.55725]  # rotation in degrees
-
-pose_follower_to_master = [0.6826794, -0.3961288,  0.0015, 0.0, 0.0,  3.1446]
-
-master_tcp_pose = [0.3493, -0.1724, 0.3211, 77.10, -147.07, 145.85]  # rotation in degrees
+master_tcp_pose = [385.86, -59.3, 377.83, 82.391331, -145.13021, 144.55725]  # rotation in degrees
 
 
 plot_tcp_3d_view("./case_4/tcp_data.csv", pose_follower_to_master, master_tcp_pose)
