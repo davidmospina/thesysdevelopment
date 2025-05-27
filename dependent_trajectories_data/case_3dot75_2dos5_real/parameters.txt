@@ -1,0 +1,21 @@
+pose_follower_to_master = [0.6816794, -0.3941288,  -0.002, 0.0, 0.0,  3.1410]
+
+master_tcp_pose = [385.8, -59.6, 377.6, 76.74 , 49.46, 42.01 ] # rotation in degrees
+
+
+aM=0.07
+aP=0.0425
+pM = 0
+pP = 0
+wM=2*3.1416/3.75
+wP=2*3.1416/2.5
+
+
+
+max_speed = 0.2293 m/s #robot is not able to perform
+
+
+
+
+
+
