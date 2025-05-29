@@ -99,7 +99,7 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
         # --- Plot 1: X vs Y (trajectory shape) ---
         plt.figure(figsize=(8, 8))
         plt.plot(master_x, master_y, label="Master X vs Y (Measured)", color="blue")
-        plt.plot(follower_x, follower_y, label="Follower X vs Y (Transformed)", color="red")
+        plt.plot(follower_x, follower_y, label="Follower X vs Y (Measured)", color="red")
         plt.plot(xM_ideal, yM_ideal, label="Ideal Master Trajectory", linestyle='--', linewidth=1.5, color = "yellow")
         plt.plot(xP_ideal, yP_ideal, label="Ideal Partner Trajectory", linestyle='--', linewidth=1.5)
         plt.xlabel("X (m)")
