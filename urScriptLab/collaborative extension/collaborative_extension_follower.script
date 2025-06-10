@@ -4,7 +4,8 @@
 reset_world_model()
 
 global moveTarget = [0, 0, 0, 0, 0, 0]
-add_frame("masterFrame",p[0.6816794, -0.3941288,  0.002, 0.0, 0.0,  3.1410]
+global max_tcp_speed = 0
+add_frame("masterFrame",p[0.648,-0.4035,0.001,0,0,3.1416]
 ,"base")
 add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
@@ -379,6 +380,11 @@ while (True):
         nextPose = convert_pose(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], "masterFrame", "base")
         q = get_inverse_kin(nextPose)
         servoj(q,a,v,t,lookahead_time,gain)
+        global current_tcp_speed = get_actual_tcp_speed()
+        if current_tcp_speed > max_tcp_speed:
+          max_tcp_speed = norm([current_tcp_speed[0],current_tcp_speed[1],current_tcp_speed[2]])
+        end
+
       end
     end
   end

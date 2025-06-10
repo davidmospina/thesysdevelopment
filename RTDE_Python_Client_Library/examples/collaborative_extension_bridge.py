@@ -550,14 +550,19 @@ def main():
 
         elif args.v3d_bm:
             print("\nPlotting 3D-style TCP views...")
-            pose_follower_to_master = [0.684288043, -0.398951501, 0.004334566, -0.035435978, -0.002129936, 3.13116691]
+            pose_follower_to_master = [0.648,-0.4035,0.001,0,0,3.1416]
 
             master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
 
             plot_tcp_3d_view_master_base("tcp_data.csv", pose_follower_to_master)
 
         sys.exit()
+    # # pose_follower_to_master = [0.648,-0.4035,0.001,0,0,3.1416]
 
+    # # master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
+
+    # # plot_tcp_3d_view_master_base("tcp_data.csv", pose_follower_to_master)
+    # plot_tcp_data("tcp_data.csv")
 
 if __name__ == "__main__":
     main()

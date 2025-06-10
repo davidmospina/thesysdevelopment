@@ -131,9 +131,10 @@ def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
 
 
 print("\nPlotting 3D-style TCP views...")
-pose_follower_to_master = [0.6816794, -0.3941288,  -0.002, 0.0, 0.0,  3.1410]
-
-master_tcp_pose = [385.86, -59.3, 377.83, 82.391331 , -144.9583, 144.55725 ]  # rotation in degrees
+pose_follower_to_master = [0.648,-0.4035,0.001,0,0,3.1416]
 
 
-plot_tcp_3d_view("./tcp_data.csv", pose_follower_to_master, master_tcp_pose)
+master_tcp_pose = [351.2074609962813,171.22946100731344,324.6982387302746, 82.391331 , -144.9583, 144.55725 ]  # rotation in degrees
+
+
+plot_tcp_3d_view("./tcp_data_real.csv", pose_follower_to_master, master_tcp_pose)

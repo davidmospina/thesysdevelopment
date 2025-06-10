@@ -584,7 +584,7 @@ def trajectory_control():
   pM = 0
   pP = 0
   wM=2*3.1416/30 
-  wP=2*3.1416/5 
+  wP=2*3.1416/7.5 
   
   centerM = get_actual_tcp_pose()
   global poseToMoveM = pose_trans(centerM,p[aM,0,0,0,0,0])
@@ -635,7 +635,11 @@ write_output_integer_register(25, 0)
 
 # while (True):
 
+movej(p[0.3859, -0.1303,0.3263,d2r(-50.08),d2r(91.05),d2r(-90.13)])
 trajectory_control()
+movel(struct(pose = p[-0.14, 0, 0, 0, 0, 0], frame = "tcp"))
+trajectory_control()
+
 
 
 
