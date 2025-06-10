@@ -1,11 +1,13 @@
-# FOLLOWER SCRIPT
+# PARTNER SCRIPT
 
-#Define syncPos as desired
-global syncPos=[d2r(-91.71),d2r(-98.96),d2r(-126.22),d2r(-46.26),d2r(91.39),d2r(-1.78)]
 #Initialization of Variables
+reset_world_model()
+
 global moveTarget = [0, 0, 0, 0, 0, 0]
-global ftPartner = p[0, 0, 0, 0, 0, 0]
-global inPosSync = 0
+global max_tcp_speed = 0
+add_frame("masterFrame",p[0.648,-0.4035,0.001,0,0,3.1416]
+,"base")
+add_frame("tcpMaster",p[0,0,0,0,0,0],"base")
 
 tWait = 0.0005
 
@@ -20,38 +22,119 @@ def read_target():
     global moveTarget=tmpMoveTarget
 end
 
+def external_speed_control(a,t):
+
+  speed_threshold = 1e-4  # deadzone to ignore tiny input noise
+  speed_control_active = True
+  while speed_control_active:
+      # Read linear velocities (vx, vy, vz)
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
+
+      # Read angular velocities (rx, ry, rz)
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
+
+      # Build the velocity vector
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+
+      # Check if velocity vector is "significant"
+      speed_mag = norm(speed_vector)
+
+      if speed_mag > speed_threshold:
+          speedl(struct(vel=speed_vector, frame="masterFrame") , a=a, t=t)
+      else:
+          speedl([0, 0, 0, 0, 0, 0], a=a, t=t)
+      end
+      leave = read_input_integer_register(30)
+      if leave == 1:
+        speed_control_active = False
+      end
+  end
+end
+
+def virtual_tcp_control():
+  timestep = 0.002
+  lookahead_time = 0.1
+  gain = 500
+  deadzone = 1e-4
+
+  tcp_control_active = True
+  virtual_tcp = get_actual_tcp_pose()
+
+  while tcp_control_active:
+      # Read controller inputs
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
+
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+      speed_mag = norm(speed_vector)
+
+      if speed_mag > deadzone:
+        #Apply delta to virtual TCP pose
+        delta_pose = p[vx * timestep, vy * timestep, vz * timestep, rx * timestep, ry * timestep, rz * timestep]
+        virtual_tcp = pose_trans(virtual_tcp, delta_pose)
+
+        # Calculate joint target and send servoj
+        q_target = get_inverse_kin(virtual_tcp)
+        servoj(q_target, t=timestep, lookahead_time=lookahead_time, gain=gain)
+      else:
+          # Hold current position
+          servoj(get_actual_joint_positions(), t=timestep, lookahead_time=lookahead_time, gain=gain)
+      end
+
+      # Exit condition (same as external_speed_control)
+      leave = read_input_integer_register(30)
+      if leave == 1:
+          tcp_control_active = False
+      end
+  end
+end
+
+
+######### INITAL SYNC #########
 write_output_integer_register(25, 0)
 
+######### MAIN PROGRAM #########
 while (True):
   startTime = time(mode = 2)
   while(True):
     functionCode = read_input_integer_register(25)
-    if functionCode != 12:
+    if functionCode != 12 and functionCode != 20 :
+
+      #movel
       if functionCode == 10:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
-    
+
         # Read parameters
         a = read_input_float_register(30)
         v = read_input_float_register(31)
         t = read_input_float_register(32)
         r = read_input_float_register(33)
         read_target()
-    
+
         # Execute movel (stage 3)
-        movel(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], a, v, t, r)
-    
+        movel(struct(pose = p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], frame = "masterFrame"), a, v, t, r)
+
         # Signal done
         write_output_integer_register(25, 3)
-    
+
         # Wait for master to reset to 0
         while (read_input_integer_register(25) != 0):
           sleep(tWait)
         end
-    
+
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
 
+      #movej
       elif functionCode == 11:
         #Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -61,7 +144,7 @@ while (True):
         r = read_input_float_register(33)
         read_target()
         movej(moveTarget,a,v,t,r)
-        
+
         # Signal done
         write_output_integer_register(25, 3)
         # Wait for master to reset to 0
@@ -69,6 +152,42 @@ while (True):
           sleep(tWait)
         end
         write_output_integer_register(25, 0)
+
+      # #add_collab_frame
+      # elif (functionCode == 21):
+      #   #Acknowledge command received (stage 2)
+      #   write_output_integer_register(25, 2)
+      #   read_target()
+      #   add_frame("frameA",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"base")
+      #   sleep(0.004)
+      #   # Signal done
+      #   write_output_integer_register(25, 3)
+      #   # Wait for master to reset to 0
+      #   while (read_input_integer_register(25) != 0):
+      #     sleep(tWait)
+      #   end
+      #   write_output_integer_register(25, 0)
+
+      #move_collab_frame
+      elif (functionCode == 21):
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+        read_target()
+        frame = read_input_integer_register(30)
+        if frame == 1:
+          move_frame("masterFrame",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"base")
+        elif frame == 2:
+          move_frame("tcpMaster",p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]],"masterFrame")
+        end
+        sleep(0.004)
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
+        write_output_integer_register(25, 0)
+
 
       elif functionCode == 13:
         # Acknowledge command received (stage 2)
@@ -87,7 +206,7 @@ while (True):
         end
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
-  
+
       elif functionCode == 14:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -96,16 +215,16 @@ while (True):
         l = read_input_boolean_register(64) #signal level
         set_standard_digital_out(n, l)
         sleep(0.004)
-        
+
         # Signal done
-        write_output_integer_register(25, 3) 
+        write_output_integer_register(25, 3)
         # Wait for master to reset to 0
         while (read_input_integer_register(25) != 0):
           sleep(tWait)
         end
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
-  
+
       elif functionCode == 15:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -114,7 +233,7 @@ while (True):
         av = read_input_float_register(35) #relative signal level for Analog Out
         set_standard_analog_out(n,av)
         sleep(0.004)
-        
+
         # Signal done
         write_output_integer_register(25, 3)
         # Wait for master to reset to 0
@@ -123,7 +242,7 @@ while (True):
         end
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
-  
+
       elif functionCode == 16:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -132,7 +251,7 @@ while (True):
         l = read_input_boolean_register(64) #signal level
         set_tool_digital_out(n,l)
         sleep(0.004)
-        
+
         # Signal done
         write_output_integer_register(25, 3)
         # Wait for master to reset to 0
@@ -141,16 +260,16 @@ while (True):
         end
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
-  
+
       elif functionCode == 17:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
 
         n = read_input_integer_register(28)
-        level = get_configurable_digital_in(n) #needs a boolean output register placeholder 
+        level = get_configurable_digital_in(n) #needs a boolean output register placeholder
         sleep(0.004)
         write_output_boolean_register(65,level)
-        
+
         # Signal done
         write_output_integer_register(25, 3)
         # Wait for master to reset to 0
@@ -159,7 +278,7 @@ while (True):
         end
         # Reset self to idle (stage 0)
         write_output_integer_register(25, 0)
-      
+
       elif functionCode == 18:
         # Acknowledge command received (stage 2)
         write_output_integer_register(25, 2)
@@ -168,7 +287,7 @@ while (True):
         float = get_standard_analog_in(n) #needs a float output register placeholder
         sleep(0.004)
         write_output_float_register(37,float)
-        
+
         # Signal done
         write_output_integer_register(25, 3)
         # Wait for master to reset to 0
@@ -183,23 +302,65 @@ while (True):
         write_output_integer_register(25, 2)
 
         n = read_input_integer_register(28)
-        level = get_standard_digital_in(n) #needs a boolean output register placeholder 
+        level = get_standard_digital_in(n) #needs a boolean output register placeholder
         sleep(0.004)
         write_output_boolean_register(66,level)
 
         # Signal done
         write_output_integer_register(25, 3)
-    
+
         # Wait for master to reset to 0
         while (read_input_integer_register(25) != 0):
           sleep(tWait)
         end
         # Reset self to idle (stage 0)
+
+      #movej_to_pose
+      elif functionCode == 22:
+        # popup("partner is idle", "status")
+
+
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+        a = read_input_float_register(30)
+        v = read_input_float_register(31)
+        t = read_input_float_register(32)
+        r = read_input_float_register(33)
+        read_target()
+        movej(struct(pose = p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], frame = "masterFrame"),a,v,t,r)
+
+        # Signal done
+        write_output_integer_register(25, 3)
+        # Wait for master to reset to 0
+        while (read_input_integer_register(25) != 0):
+          sleep(tWait)
+        end
         write_output_integer_register(25, 0)
-        
+
+      
+      #external_speed_control      
+      elif functionCode == 23:
+
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+        a = read_input_float_register(30)
+        t = read_input_float_register(31)
+        external_speed_control(a,t)
+
+
+      #virtual_tcp_control      
+      elif functionCode == 24:
+
+        #Acknowledge command received (stage 2)
+        write_output_integer_register(25, 2)
+        a = read_input_float_register(30)
+        t = read_input_float_register(31)
+        virtual_tcp_control()
+
+
       end
-      # sync()
     else:
+      #servoJ
       if functionCode == 12:
         a = read_input_float_register(30)
         v = read_input_float_register(31)
@@ -208,6 +369,22 @@ while (True):
         gain = read_input_float_register(34)
         read_target()
         servoj(moveTarget,a,v,t,lookahead_time,gain)
+      #servoJ_to_pose:
+      elif functionCode == 20:
+        a = read_input_float_register(30)
+        v = read_input_float_register(31)
+        t = read_input_float_register(32)
+        lookahead_time = read_input_float_register(33)
+        gain = read_input_float_register(34)
+        read_target()
+        nextPose = convert_pose(p[moveTarget[0], moveTarget[1], moveTarget[2], moveTarget[3], moveTarget[4], moveTarget[5]], "masterFrame", "base")
+        q = get_inverse_kin(nextPose)
+        servoj(q,a,v,t,lookahead_time,gain)
+        global current_tcp_speed = get_actual_tcp_speed()
+        if current_tcp_speed > max_tcp_speed:
+          max_tcp_speed = norm([current_tcp_speed[0],current_tcp_speed[1],current_tcp_speed[2]])
+        end
+
       end
     end
   end

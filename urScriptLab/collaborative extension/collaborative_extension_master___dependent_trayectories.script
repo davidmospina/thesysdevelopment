@@ -1,0 +1,647 @@
+# MASTER SCRIPT
+
+
+#ALWAYS move the robot to: [391.1,-195.9,375.3,52.16,-142.06,146.58]
+
+######### COLLABORATIVE EXTENSION FUNCTIONS AND VARIABLES #########
+reset_world_model()
+add_frame("partnerFrame",p[0.673,-0.396,-0.002,0,0,3.1416],"base") #real distance is 70 
+
+
+tWait = 0.0005
+
+def movel_partner(pose, a=1.2, v=0.25, t=0, r=0):
+
+  # Wait for follower to be idle (stage 0)
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  # Send parameters
+  write_target(pose)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+
+  # Send command code (stage 1)
+  write_output_integer_register(25, 10)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def movej_partner(q, a=1.3, v=0.26, t=0, r=0):
+
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_integer_register(25, 11)
+  write_target(q)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  #popup("command received by partner", "status")
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  #popup("partner action done", "status")
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner idle", "status")
+
+end
+
+def servoj_partner(q, a=0, v=0, t=0.002, lookahead_time=0.1, gain=300):
+  write_output_integer_register(25, 12)
+  write_target(q)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, lookahead_time)
+  write_output_float_register(34, gain)
+end
+
+def servoj_to_pose_partner(pose, a=0, v=0, t=0.002, lookahead_time=0.1, gain=300):
+  write_output_integer_register(25, 20)
+  write_target(pose)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, lookahead_time)
+  write_output_float_register(34, gain)
+end
+
+def get_actual_tcp_pose_partner():
+  x = read_input_float_register(38)
+  y = read_input_float_register(39)
+  z = read_input_float_register(40)
+  rx = read_input_float_register(41)
+  ry = read_input_float_register(42)
+  rz = read_input_float_register(43)
+  posePartnerFrame = p[x,y,z,rx,ry,rz]
+  # popup(posePartnerFrame, "pose Partner on partner base")
+
+  pose = convert_pose(posePartnerFrame, "partnerFrame", "base")
+  return pose
+end 
+
+def movej_to_pose_partner(pose, a=1.3, v=0.26, t=0, r=0):
+
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_integer_register(25, 22)
+  write_target(pose)
+  write_output_float_register(30, a)
+  write_output_float_register(31, v)
+  write_output_float_register(32, t)
+  write_output_float_register(33, r)
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  #popup("command received by partner", "status")
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  #popup("partner action done", "status")
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner idle", "status")
+
+end
+
+# def set_frame_partner(pose = [0,0,0,0,0,0]):
+
+#   # Wait for follower to be idle (stage 0)
+#   #popup("function called", "status")
+#   while (read_input_integer_register(25) != 0):
+#     sleep(tWait)
+#   end
+
+#   # Send parameters
+#   write_target(pose)
+
+#   # Send command code (stage 1)
+#   write_output_integer_register(25, 21)
+
+#   # Wait for follower to ACK (stage 2)
+#   while (read_input_integer_register(25) != 2):
+#     sleep(tWait)
+#   end
+
+#   # Wait for follower to finish and signal DONE (stage 3)
+#   while (read_input_integer_register(25) != 3):
+#     sleep(tWait)
+#   end
+
+#   # Reset master command register (stage 4)
+#   write_output_integer_register(25, 0)
+
+#   # Wait for follower to return to idle
+#   while (read_input_integer_register(25) != 0):
+#     sleep(tWait)
+#   end
+
+# end
+
+def move_frame_partner(pose = [0,0,0,0,0,0], frame = 2 ):
+
+  # Wait for follower to be idle (stage 0)
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  # Send parameters
+  write_target(pose)
+  write_output_integer_register(30, frame)
+
+
+  # Send command code (stage 1)
+  write_output_integer_register(25, 22)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+end
+
+def write_target(target):
+  write_output_float_register(24, target[0])
+  write_output_float_register(25, target[1])
+  write_output_float_register(26, target[2])
+  write_output_float_register(27, target[3])
+  write_output_float_register(28, target[4])
+  write_output_float_register(29, target[5])
+end
+
+
+def set_configurable_digital_out_partner(n, l):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 13)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_standard_digital_out_partner(n, l): 
+  # function accepts n range of [0:7] and l level True/False
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 14) #send command code
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_standard_analog_out_partner(n,f):
+  # function accepts n range of [0:1] and f equals the relative signal level between 0 and 1
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  
+  write_output_integer_register(27, n) # Select IO number
+  write_output_float_register(35, f) 
+  write_output_integer_register(25, 15) #send command code
+  
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def set_tool_digital_out_partner(n, l):
+  # function accepts n range of [0:1] and l level True/False
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  
+  write_output_integer_register(27, n) # Select IO number
+  write_output_boolean_register(64, l)
+  write_output_integer_register(25, 16)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  # Wait for follower to return to idle
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+end
+
+def get_configurable_digital_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(28, n) # Select IO number to read from
+  write_output_integer_register(25, 17)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value1 = read_input_boolean_register(65) #read boolean value
+  # Reset master command register (stage 4)
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  return read_value1
+end
+
+def get_standard_analog_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  write_output_integer_register(25, 18)
+  write_output_integer_register(28, n) # Select IO number
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value2 = read_input_float_register(37)
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  return read_value2
+end
+
+def get_standard_digital_in_partner(n):
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+  write_output_integer_register(25, 19)
+  write_output_integer_register(28, n) # Select IO number
+  
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+
+  # Wait for follower to finish and signal DONE (stage 3)
+  while (read_input_integer_register(25) != 3):
+    sleep(tWait)
+  end
+
+  read_value3 = read_input_boolean_register(66) #boolean value
+  write_output_integer_register(25, 0)
+
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  return read_value3
+end
+
+def external_speed_control_partner(a, t):
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_float_register(30, a)
+  write_output_float_register(31, t)
+  write_output_integer_register(25, 23)
+
+  # Wait for follower to ACK (stage 2)
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+end
+
+def virtual_tcp_control_partner(a, t):
+  #popup("function called", "status")
+  while (read_input_integer_register(25) != 0):
+    sleep(tWait)
+  end
+
+  #popup("partner is idle", "status")
+
+  write_output_float_register(30, a)
+  write_output_float_register(31, t)
+  write_output_integer_register(25, 24)
+
+  # Wait for follower to ACK (stage 2)
+  # popup("waiting for 2", "status")
+
+  while (read_input_integer_register(25) != 2):
+    sleep(tWait)
+  end
+  # popup("got the 2", "status")
+
+end
+
+
+def external_speed_control(a,t):
+
+  speed_threshold = 1e-4  # deadzone to ignore tiny input noise
+  speed_control_active = True
+  while speed_control_active:
+      
+      # Read linear velocities (vx, vy, vz)
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
+  
+      # Read angular velocities (rx, ry, rz)
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
+  
+  
+      # Build the velocity vector
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+  
+      # Check if velocity vector is "significant"
+      speed_mag = norm(speed_vector)
+  
+      if speed_mag > speed_threshold:
+          speedl(speed_vector, a=a, t=t)
+      else:
+          speedl([0, 0, 0, 0, 0, 0], a=a, t=t)
+      end
+      leave = read_input_integer_register(30)
+      if leave == 1:
+        speed_control_active = False
+      end
+  end
+end
+
+
+def virtual_tcp_control():
+  timestep = 0.002
+  lookahead_time = 0.1
+  gain = 500
+  deadzone = 1e-4  
+
+  tcp_control_active = True
+  # thread move_partnerThread(): partnerThread() end
+  thread move_masterThread(): masterThread() end
+  # thrd1 = run move_partnerThread()
+  thrd2 = run move_masterThread()
+
+
+  while tcp_control_active:
+      virtual_tcp = get_actual_tcp_pose()
+      # Read controller inputs
+      vx = read_input_float_register(38)
+      vy = read_input_float_register(39)
+      vz = read_input_float_register(40)
+      rx = read_input_float_register(41)
+      ry = read_input_float_register(42)
+      rz = read_input_float_register(43)
+
+      speed_vector = [vx, vy, vz, rx, ry, rz]
+      speed_mag = norm(speed_vector)
+
+      if speed_mag > deadzone:
+          # Apply delta to virtual TCP pose
+          delta_pose = p[vx * timestep, vy * timestep, vz * timestep, rx * timestep, ry * timestep, rz * timestep]
+          virtual_tcp = pose_add(virtual_tcp, delta_pose)
+          sleep(timestep)
+
+      end
+
+      # Exit condition if A button is pressed external motion of vitual tcp is disable
+      leave = read_input_integer_register(30)
+      if leave == 1:
+          tcp_control_active = False
+          # kill thrd1
+          kill thrd2
+
+      end
+  end
+end
+
+
+
+######### USER PROGRAM FUNCTIONS AND VARIABLES #########
+
+def partnerThread():
+  while(True):
+    servoj_to_pose_partner(poseToMoveP, a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+  end
+ end
+
+def masterThread():
+  while(True):
+    q = get_inverse_kin(poseToMoveM)
+    servoj(q,a=0, v=0, t=0.002, lookahead_time=0.1, gain=2000)
+  end
+end
+
+
+def trajectory_control():
+  aM=0.07
+  aP=0.0425
+  pM = 0
+  pP = 0
+  wM=2*3.1416/30 
+  wP=2*3.1416/7.5 
+  
+  centerM = get_actual_tcp_pose()
+  global poseToMoveM = pose_trans(centerM,p[aM,0,0,0,0,0])
+  movej(poseToMoveM)
+  initPoseP = convert_pose(p[aP,0,0,0,0,0], "tcp", "base")
+  rotation180Y = p[0, 0, 0, 0, 3.1416, 0]
+  global poseToMoveP = pose_trans(initPoseP, rotation180Y)
+  movej_to_pose_partner(poseToMoveP, a=1.3, v=0.26, t=0, r=0)
+  thread move_partnerThread(): partnerThread() end
+  thread move_masterThread(): masterThread() end
+  thrd1 = run move_partnerThread()
+  thrd2 = run move_masterThread()
+  startTime = time()
+
+  while (pM<=6.28):
+    pM = pM + wM/500
+    deltaYM = aM*sin(pM)
+    deltaxM = aM*cos(pM)
+    nextPoseM  = pose_trans(centerM,p[deltaxM,deltaYM,0,0,0,0])
+    pP = pP + wP/500
+    deltaYP = aP*sin(pP)
+    deltaXP = aP*cos(pP)
+    nextPoseP = p[deltaXP ,deltaYP,0,0,0,0]
+    nextPoseP = convert_pose(nextPoseP, "tcp", "base")
+    global poseToMoveP = pose_trans(nextPoseP, rotation180Y)
+    global poseToMoveM = nextPoseM
+    sync()
+  end
+  endTime = time()
+  kill thrd1
+  kill thrd2
+  movej(centerM)
+  # movej_to_pose_partner(initPoseP, a=1.3, v=0.26, t=0, r=0)
+  totalTime = endTime.sec - startTime.sec 
+  popup(totalTime, "Time:")
+end
+
+######### INITAL SYNC #########
+write_output_integer_register(25, 0)
+
+######### BEFORE PROGRAM #########
+
+#Initialization of Variables
+
+
+
+######### MAIN PROGRAM #########
+
+# while (True):
+
+movej(p[0.3859, -0.1303,0.3263,d2r(-50.08),d2r(91.05),d2r(-90.13)])
+trajectory_control()
+movel(struct(pose = p[-0.14, 0, 0, 0, 0, 0], frame = "tcp"))
+trajectory_control()
+
+
+
+
+
+# end

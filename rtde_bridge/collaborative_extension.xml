@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<rtde_config>
+
+	<recipe key="MASTER_OUT"> 
+
+	<!-- sync initial handshake -->
+	<field name="output_int_register_24" type="INT32"/>
+	<!-- code command to send to Partner-->
+	<field name="output_int_register_25" type="INT32"/>
+	<!-- Get tcp pose from master to plot-->
+	<field name="actual_TCP_pose" type="VECTOR6D"/>
+	<field name="actual_q" type="VECTOR6D"/>
+
+	<!-- FUNCTIONS -->	
+
+	<!-- Move target -->
+	<field name="output_double_register_24" type="DOUBLE"/>
+	<field name="output_double_register_25" type="DOUBLE"/>
+	<field name="output_double_register_26" type="DOUBLE"/>
+	<field name="output_double_register_27" type="DOUBLE"/>
+	<field name="output_double_register_28" type="DOUBLE"/>
+	<field name="output_double_register_29" type="DOUBLE"/>
+	<!-- Motion parameters (aceleration, velocity, time, blend radius) -->
+	<field name="output_double_register_30" type="DOUBLE"/>
+	<field name="output_double_register_31" type="DOUBLE"/>
+	<field name="output_double_register_32" type="DOUBLE"/>
+	<field name="output_double_register_33" type="DOUBLE"/>
+	<!-- Servo J gain parameter -->
+	<field name="output_double_register_34" type="DOUBLE"/>
+	<!-- I/O Output selector (number) -->
+	<field name="output_int_register_27" type="INT32"/>
+	<!-- I/O Input selector (number) -->
+	<field name="output_int_register_28" type="INT32"/>
+	<!-- I/O parameters -->
+	<field name="output_double_register_35" type="DOUBLE"/>
+	<field name="output_bit_register_64" type="BOOL"/>
+
+	</recipe>
+	
+
+	<recipe key="MASTER_IN"> 
+
+	<!-- sync initial handshake from Partner -->
+	<field name="input_int_register_24" type="INT32"/>
+	<!-- status reg from Partner -->
+	<field name="input_int_register_25" type="INT32"/>
+
+	<!-- I/O Boolean to receive the value of I/O configurable input from partner  -->
+	<field name="input_bit_register_65" type="BOOL"/>
+	<!-- I/O Boolean to reveive the value of I/O standard input from partner  -->
+	<field name="input_bit_register_66" type="BOOL"/>
+	<!-- Float to receive value from I/O Analog Input from partner -->
+	<field name="input_double_register_37" type="DOUBLE"/>
+
+	<!-- SPEEDL from controller-->
+	<field name="input_double_register_38" type="DOUBLE"/>
+	<field name="input_double_register_39" type="DOUBLE"/>
+	<field name="input_double_register_40" type="DOUBLE"/>
+	<field name="input_double_register_41" type="DOUBLE"/>
+	<field name="input_double_register_42" type="DOUBLE"/>
+	<field name="input_double_register_43" type="DOUBLE"/>
+
+	
+	<!-- SPEEDL deactivate button-->
+	<field name="input_int_register_30" type="INT32"/>
+	
+	<!-- SPEEDL from controller-->
+	
+
+	
+
+	</recipe>
+
+
+	<recipe key="FOLLOWER_OUT"> 
+
+	<!-- sync initial handshake -->
+	<field name="output_int_register_24" type="INT32"/>
+	<!-- code command to send to Master-->
+	<field name="output_int_register_25" type="INT32"/>
+	<!-- Get tcp pose from follower to plot-->
+	<field name="actual_TCP_pose" type="VECTOR6D"/>
+	<field name="actual_q" type="VECTOR6D"/>
+
+
+	<!-- I/O Boolean to send the value of I/O configurable input  -->
+	<field name="output_bit_register_65" type="BOOL"/>
+	<!-- I/O Boolean to send the value of I/O standard input  -->
+	<field name="output_bit_register_66" type="BOOL"/>
+	<!-- Float to send value from I/O Analog Input -->
+	<field name="output_double_register_37" type="DOUBLE"/>
+
+
+	</recipe>
+
+
+	<recipe key="FOLLOWER_IN"> 
+
+	<!-- sync initial handshake from Master -->
+	<field name="input_int_register_24" type="INT32"/>
+	<!-- status reg from Master -->
+	<field name="input_int_register_25" type="INT32"/>
+
+	<!-- FUNCTIONS -->
+
+	<!-- SPEEDL deactivate button-->
+	<field name="input_int_register_30" type="INT32"/>
+	<!-- SPEEDL from controller-->
+	<field name="input_double_register_38" type="DOUBLE"/>
+	<field name="input_double_register_39" type="DOUBLE"/>
+	<field name="input_double_register_40" type="DOUBLE"/>
+	<field name="input_double_register_41" type="DOUBLE"/>
+	<field name="input_double_register_42" type="DOUBLE"/>
+	<field name="input_double_register_43" type="DOUBLE"/>
+	
+
+
+	<!-- MOVEL / MOVEJ joint or pose values for a target -->
+	
+	<field name="input_double_register_24" type="DOUBLE"/>
+	<field name="input_double_register_25" type="DOUBLE"/>
+	<field name="input_double_register_26" type="DOUBLE"/>
+	<field name="input_double_register_27" type="DOUBLE"/>
+	<field name="input_double_register_28" type="DOUBLE"/>
+	<field name="input_double_register_29" type="DOUBLE"/>
+	<!-- Move J aceleration, velocity, time, blend radius -->
+	<field name="input_double_register_30" type="DOUBLE"/>
+	<field name="input_double_register_31" type="DOUBLE"/>
+	<field name="input_double_register_32" type="DOUBLE"/>
+	<field name="input_double_register_33" type="DOUBLE"/>
+		<!-- Servo J gain parameter -->
+	<field name="input_double_register_34" type="DOUBLE"/>
+	<!-- I/O parameters -->
+	<field name="input_double_register_35" type="DOUBLE"/>
+	<field name="input_bit_register_64" type="BOOL"/>
+	<!-- I/O Output parameter number elector-->
+	<field name="input_int_register_27" type="INT32"/>
+	<!-- I/O Input parameter number selector-->
+	<field name="input_int_register_28" type="INT32"/>
+
+	
+
+	</recipe>
+
+</rtde_config>
