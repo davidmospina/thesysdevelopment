@@ -1,3 +1,27 @@
+#!/usr/bin/env python
+# Copyright (c) 2016-2022, Universal Robots A/S,
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the Universal Robots A/S nor the names of its
+#      contributors may be used to endorse or promote products derived
+#      from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL UNIVERSAL ROBOTS A/S BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import sys
 import argparse  # Import argparse for command-line arguments
 sys.path.append("..")
@@ -5,18 +29,18 @@ import logging
 import threading
 import time
 import csv
+import socket
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 import matplotlib
-# matplotlib.use('TkAgg')
-import pygame
-import time
-import signal
+import numpy as np
+from scipy.spatial.transform import Rotation as R
+
+matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pprint
-import math
 
 CONFIG_FILE = "collaborative_extension.xml"
 
@@ -50,28 +74,6 @@ followerTCP = None
 keep_running = True
 lock = threading.Lock()
 
-def handle_sigint(signum, frame):
-    global keep_running
-    print("\nSIGINT received. Shutting down gracefully...")
-    pygame.quit()
-    keep_running = False
-
-# # signal.signal(signal.SIGINT, handle_sigint)
-
-pygame.init()
-pygame.joystick.init()
-
-if pygame.joystick.get_count() == 0:
-    raise Exception("No joystick/controller connected!")
-
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
-print(f"Initialized Controller: {joystick.get_name()}")
-
-# Scaling factors (adjust if needed)
-MAX_LINEAR_SPEED = 3  # [m/s]
-MAX_ROTATION_SPEED = 4.0 # [rad/s]
-
 # Function to safely update global state variables
 def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
     global masterTCP, followerTCP, keep_running, followerQ, masterQ
@@ -101,7 +103,7 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         link_int(master_in_int,stateFollower,inputsMaster)
         link_bool(master_in_bool,stateFollower,inputsMaster)
         link_float(master_in_float,stateFollower,inputsMaster)
-        # link_vector(followerTCP, 38, 43, inputsMaster)
+        link_vector(followerTCP, 38, 43, inputsMaster)
 
         # UPDATE FOLLOWER IN REGISTERS BASED ON MASTER OUTPUTS
         masterTCP = stateMaster.actual_TCP_pose #needed for plot
@@ -111,54 +113,11 @@ def update_state(masterCon, followerCon, inputsFollower,inputsMaster):
         link_bool(follower_in_bool,stateMaster,inputsFollower)
         link_float(follower_in_float,stateMaster,inputsFollower)
 
-        controller_speeds , a_button = read_controller()
-        link_external_controller_inputs(inputsFollower,inputsMaster, controller_speeds, a_button)
-
     
     followerCon.send(inputsFollower)
     masterCon.send(inputsMaster)
     keep_running = True
 
-def apply_deadzone(value, threshold=0.08):
-    return value if abs(value) >= threshold else 0.0
-
-def scale_input(x, scale=2.0):
-    return math.copysign(abs(x) ** scale, x)
-
-
-def read_controller():
-    pygame.event.pump()
-
-
-    # Example use inside read_controller():
-    left_stick_x = scale_input(apply_deadzone(joystick.get_axis(0)))
-    left_stick_y = scale_input(apply_deadzone(joystick.get_axis(1)))
-    right_stick_x = scale_input(apply_deadzone(joystick.get_axis(3)))
-    right_stick_y = scale_input(apply_deadzone(joystick.get_axis(4)))
-
-    lt = (joystick.get_axis(2) + 1) / 2
-    rt = (joystick.get_axis(5) + 1) / 2
-    lt = scale_input(apply_deadzone(lt), scale=3.0)
-    rt = scale_input(apply_deadzone(rt), scale=3.0)
-
-    a_button = joystick.get_button(0)
-
-    lb = joystick.get_button(4)
-    rb = joystick.get_button(5)
-
-    # Velocity mapping (no repeated deadzone!)
-    vx = left_stick_x * MAX_LINEAR_SPEED
-    vy = -left_stick_y * MAX_LINEAR_SPEED
-    vz = (rt - lt) * MAX_LINEAR_SPEED
-
-    rx = -right_stick_y * MAX_ROTATION_SPEED
-    ry = right_stick_x * MAX_ROTATION_SPEED
-    rz = (rb - lb) * MAX_ROTATION_SPEED
-
-    speed = [vx, vy, vz, rx, ry, rz], a_button
-
-    # print(speed)
-    return speed
 
 def link_int(reg_indexes,source,destination):
     for reg in reg_indexes:
@@ -180,24 +139,6 @@ def link_vector(vector, low_index, high_index, destination):
         setattr(destination, f"input_double_register_{i}", vector[i - low_index])
     return destination
 
-def link_external_controller_inputs(inputsFollower,inputsMaster,controller_speeds, a_button):
-    inputsMaster.input_double_register_38 = controller_speeds[0]
-    inputsMaster.input_double_register_39 = controller_speeds[1]
-    inputsMaster.input_double_register_40 = controller_speeds[2]
-    inputsMaster.input_double_register_41 = controller_speeds[3]
-    inputsMaster.input_double_register_42 = controller_speeds[4]
-    inputsMaster.input_double_register_43 = controller_speeds[5]
-    inputsMaster.input_int_register_30 = a_button
-    
-
-    inputsFollower.input_double_register_38 = controller_speeds[0]
-    inputsFollower.input_double_register_39 = controller_speeds[1]
-    inputsFollower.input_double_register_40 = controller_speeds[2]
-    inputsFollower.input_double_register_41 = controller_speeds[3]
-    inputsFollower.input_double_register_42 = controller_speeds[4]
-    inputsFollower.input_double_register_43 = controller_speeds[5]
-    inputsFollower.input_int_register_30 = a_button
-
 
 
 def collect_and_save_tcp_data():
@@ -210,7 +151,7 @@ def collect_and_save_tcp_data():
         writer.writerow(["Timestamp (s)", "Master TCP X", "Master TCP Y", "Master TCP Z", "Follower TCP X", "Follower TCP Y", "Follower TCP Z"])
 
         while keep_running:
-            time.sleep(0.5)  # Wait for 0.5 seconds
+            time.sleep(0.002)  # Wait for 0.5 seconds
 
             timestamp = time.time() - start_time  # Get time elapsed
             with lock:
@@ -352,16 +293,40 @@ def plot_joint_data(file_path):
     except Exception as e:
         print(f"Error: {e}")
 
-def plot_tcp_3d_view(file_path):
+def pose_to_matrix(pose):
+    T = np.eye(4)
+    T[:3, 3] = pose[:3]
+    T[:3, :3] = R.from_rotvec(pose[3:]).as_matrix()
+    return T
+
+def plot_tcp_3d_view(file_path, follower_to_master_pose, master_tcp_pose):
+    """
+    Plots TCP data:
+    - Transforms follower TCPs into master frame
+    - Shifts all poses so master TCP is at origin
+    - Rotates both TCPs into the master TCP's local coordinate frame
+    - Plots: X vs Y and Z vs Time
+    - Also plots ideal X-Y trajectories of master and follower for reference
+    """
+    import csv
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from scipy.spatial.transform import Rotation as R
+
     timestamps = []
-    master_x = []
-    master_y = []
-    master_z = []
-    follower_x = []
-    follower_y = []
-    follower_z = []
+    master_x, master_y, master_z = [], [], []
+    follower_x, follower_y, follower_z = [], [], []
 
     try:
+        # Transform follower base to master base
+        T_follower_to_master = pose_to_matrix(follower_to_master_pose)
+
+        # Get inverse rotation of master TCP
+        tcp_rotvec_rad = np.deg2rad(master_tcp_pose[3:])  # convert degrees to radians
+        R_tcp_inv = R.from_rotvec(tcp_rotvec_rad).inv().as_matrix()
+
+        master_translation = np.array(master_tcp_pose[:3])
+
         with open(file_path, mode='r') as file:
             reader = csv.reader(file)
             headers = next(reader, None)
@@ -371,32 +336,62 @@ def plot_tcp_3d_view(file_path):
 
             for row in reader:
                 timestamps.append(float(row[0]))
-                master_x.append(float(row[1]))   # Master X
-                master_y.append(float(row[2]))   # Master Y
-                master_z.append(float(row[3]))   # Master Z
-                follower_x.append(float(row[4])) # Follower X
-                follower_y.append(float(row[5])) # Follower Y
-                follower_z.append(float(row[6])) # Follower Z
 
-        # --- Plot 1: Y vs Z ---
-        plt.figure(figsize=(8, 5))
-        plt.plot(master_x, master_z, label="Master X vs Z", color="blue")
-        plt.plot(follower_x, follower_z, label="Follower X vs Z", color="red")
-        plt.xlabel("X")
-        plt.ylabel("Z")
-        plt.title("TCP X vs Z")
+                # --- Master TCP ---
+                master_point = np.array([float(row[1]), float(row[2]), float(row[3])])
+                shifted_master = master_point - master_translation
+                rotated_master = R_tcp_inv @ shifted_master
+                master_x.append(rotated_master[0])
+                master_y.append(rotated_master[1])
+                master_z.append(rotated_master[2])
+
+                # --- Follower TCP ---
+                fx, fy, fz = float(row[4]), float(row[5]), float(row[6])
+                follower_tcp = np.array([fx, fy, fz, 1.0])  # homogeneous
+
+                transformed_tcp = T_follower_to_master @ follower_tcp
+                shifted_follower = transformed_tcp[:3] - master_translation
+                rotated_follower = R_tcp_inv @ shifted_follower
+                follower_x.append(rotated_follower[0])
+                follower_y.append(rotated_follower[1])
+                follower_z.append(rotated_follower[2])
+
+        # --- Ideal Trajectories ---
+        aM = 0.07       # Master radius
+        aP = 0.0425     # Partner radius
+        wM = 2 * np.pi / 30  # Master angular speed (rad/s)
+        wP = 2 * np.pi / 5   # Partner angular speed (rad/s)
+        dt = 0.002
+        T_total = 30
+        t = np.arange(0, T_total, dt)
+
+        xM_ideal = aM * np.cos(wM * t)
+        yM_ideal = aM * np.sin(wM * t)
+        xP_ideal = xM_ideal + aP * np.cos(wP * t)
+        yP_ideal = yM_ideal + aP * np.sin(wP * t)
+
+        # --- Plot 1: X vs Y (trajectory shape) ---
+        plt.figure(figsize=(8, 8))
+        plt.plot(master_x, master_y, label="Master X vs Y (Measured)", color="blue")
+        plt.plot(follower_x, follower_y, label="Follower X vs Y (Transformed)", color="red")
+        plt.plot(xM_ideal, yM_ideal, label="Ideal Master Trajectory", linestyle='--', linewidth=1.5)
+        plt.plot(xP_ideal, yP_ideal, label="Ideal Partner Trajectory", linestyle='--', linewidth=1.5)
+        plt.xlabel("X (m)")
+        plt.ylabel("Y (m)")
+        plt.title("TCP X vs Y (Measured vs Ideal Trajectories)")
+        plt.axis('equal')
         plt.grid(True, linestyle='--', linewidth=0.5)
         plt.legend()
         plt.tight_layout()
         plt.show()
 
-        # --- Plot 2: Time vs X ---
+        # --- Plot 2: Z vs Time ---
         plt.figure(figsize=(8, 5))
-        plt.plot(timestamps, master_y, label="Master Y over Time", color="blue")
-        plt.plot(timestamps, follower_y, label="Follower Y over Time", color="red")
+        plt.plot(timestamps, master_z, label="Master Z over Time", color="blue")
+        plt.plot(timestamps, follower_z, label="Follower Z over Time (Transformed)", color="red")
         plt.xlabel("Timestamp (s)")
-        plt.ylabel("Y")
-        plt.title("TCP Y over Time")
+        plt.ylabel("Z (m)")
+        plt.title("TCP Z over Time (Local TCP Frame)")
         plt.grid(True, linestyle='--', linewidth=0.5)
         plt.legend()
         plt.tight_layout()
@@ -404,6 +399,61 @@ def plot_tcp_3d_view(file_path):
 
     except Exception as e:
         print(f"Error: {e}")
+
+
+
+def plot_tcp_3d_view_master_base(file_path, follower_to_master_pose):
+    """
+    Plots 3D TCP trajectories from the master's point of view.
+    - Transforms follower TCPs into the master base frame.
+    - Plots both master and follower trajectories in 3D.
+    """
+    master_x, master_y, master_z = [], [], []
+    follower_x, follower_y, follower_z = [], [], []
+
+    try:
+        # Convert follower→master pose to transformation matrix
+        T_follower_to_master = pose_to_matrix(follower_to_master_pose)
+
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            headers = next(reader, None)
+            if headers is None:
+                print("CSV file is empty. No data to plot.")
+                return
+
+            for row in reader:
+                # --- Master TCP (already in master base) ---
+                master_x.append(float(row[1]))
+                master_y.append(float(row[2]))
+                master_z.append(float(row[3]))
+
+                # --- Follower TCP ---
+                fx, fy, fz = float(row[4]), float(row[5]), float(row[6])
+                follower_tcp = np.array([fx, fy, fz, 1.0])  # homogeneous
+                transformed_tcp = T_follower_to_master @ follower_tcp
+                follower_x.append(transformed_tcp[0])
+                follower_y.append(transformed_tcp[1])
+                follower_z.append(transformed_tcp[2])
+
+        # --- 3D Plot ---
+        fig = plt.figure(figsize=(10, 6))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(master_x, master_y, master_z, label="Master TCP Trajectory", color="blue")
+        ax.plot(follower_x, follower_y, follower_z, label="Follower TCP Trajectory (Transformed)", color="red")
+
+        ax.set_xlabel("X (m)")
+        ax.set_ylabel("Y (m)")
+        ax.set_zlabel("Z (m)")
+        ax.set_title("3D TCP Trajectories in Master Base Frame")
+        ax.legend()
+        ax.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 # Main execution function
 def main():
@@ -418,7 +468,8 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--tcp", action="store_true", help="Plot TCP data on exit")
     group.add_argument("--q", action="store_true", help="Plot joint position data on exit")
-    group.add_argument("--v3d", action="store_true", help="Plot TCP Y vs Z and Z vs Time")
+    group.add_argument("--v3d", action="store_true", help="Plot TCP x vs y and Z vs Time respect master tcp")
+    group.add_argument("--v3d_bm", action="store_true", help="Plot TCP respect maste base")
 
     args = parser.parse_args()
 
@@ -451,7 +502,7 @@ def main():
     inputsMaster = masterCon.send_input_setup(master_in_names, master_in_types)
 
     # Start data collection in a separate thread based on selected type
-    if args.collection or args.tcp or args.q or args.v3d:
+    if args.collection or args.tcp or args.q or args.v3d or args.v3d_bm:
         if args.q:
             data_thread = threading.Thread(target=collect_and_save_joint_data)
         else:
@@ -467,35 +518,51 @@ def main():
     try:
         while keep_running:
             update_state(masterCon, followerCon, inputsFollower, inputsMaster)
-    finally:
-        print("\nExiting...")
+            # time.sleep(0.001)
+    except KeyboardInterrupt:
+        print("\nInterrupted!")
+        keep_running = False
 
+        # Reset registers
         inputsMaster.input_int_register_25 = 0
         masterCon.send(inputsMaster)
         inputsFollower.input_int_register_25 = 0
         followerCon.send(inputsFollower)
 
-        # pygame.quit()
-
         time.sleep(0.01)
 
+        # Wait for data collection thread to finish
         if args.collection or args.tcp or args.q:
-            data_thread.join(timeout=2.0)
+            data_thread.join()
 
-        try:
-            if args.tcp:
-                print("\nPlotting TCP data...")
-                plot_tcp_data(CSV_FILE)
-            elif args.q:
-                print("\nPlotting joint position data...")
-                plot_joint_data("joint_data.csv")
-            elif args.v3d:
-                print("\nPlotting 3D-style TCP views...")
-                plot_tcp_3d_view(CSV_FILE)
-        except Exception as e:
-            print(f"Plotting interrupted or failed: {e}")
+        # Plotting
+        if args.tcp:
+            plot_tcp_data(CSV_FILE)
+        elif args.q:
+            print("\nPlotting joint position data...")
+            plot_joint_data("joint_data.csv")
+        elif args.v3d:
+            print("\nPlotting 3D-style TCP views...")
+            pose_follower_to_master = [0.6826794, -0.3961288,  0.0015, 0.0, 0.0,  3.1446]
+
+            master_tcp_pose = [0.3493, -0.1724, 0.3211, 77.10, -147.07, 145.85]  # rotation in degrees
+            plot_tcp_3d_view("tcp_data.csv", pose_follower_to_master, master_tcp_pose)
+
+        elif args.v3d_bm:
+            print("\nPlotting 3D-style TCP views...")
+            pose_follower_to_master = [0.648,-0.4035,0.001,0,0,3.1416]
+
+            master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
+
+            plot_tcp_3d_view_master_base("tcp_data.csv", pose_follower_to_master)
 
         sys.exit()
+    # # pose_follower_to_master = [0.648,-0.4035,0.001,0,0,3.1416]
+
+    # # master_tcp_pose = [391.1, -195.9, 375.3, 52.16, -142.06, 146.58]  # rotation in degrees
+
+    # # plot_tcp_3d_view_master_base("tcp_data.csv", pose_follower_to_master)
+    # plot_tcp_data("tcp_data.csv")
 
 if __name__ == "__main__":
     main()

@@ -52,20 +52,12 @@
 	<!-- Float to receive value from I/O Analog Input from partner -->
 	<field name="input_double_register_37" type="DOUBLE"/>
 
-	<!-- SPEEDL from controller-->
 	<field name="input_double_register_38" type="DOUBLE"/>
 	<field name="input_double_register_39" type="DOUBLE"/>
 	<field name="input_double_register_40" type="DOUBLE"/>
 	<field name="input_double_register_41" type="DOUBLE"/>
 	<field name="input_double_register_42" type="DOUBLE"/>
 	<field name="input_double_register_43" type="DOUBLE"/>
-
-	
-	<!-- SPEEDL deactivate button-->
-	<field name="input_int_register_30" type="INT32"/>
-	
-	<!-- SPEEDL from controller-->
-	
 
 	
 
@@ -103,20 +95,7 @@
 
 	<!-- FUNCTIONS -->
 
-	<!-- SPEEDL deactivate button-->
-	<field name="input_int_register_30" type="INT32"/>
-	<!-- SPEEDL from controller-->
-	<field name="input_double_register_38" type="DOUBLE"/>
-	<field name="input_double_register_39" type="DOUBLE"/>
-	<field name="input_double_register_40" type="DOUBLE"/>
-	<field name="input_double_register_41" type="DOUBLE"/>
-	<field name="input_double_register_42" type="DOUBLE"/>
-	<field name="input_double_register_43" type="DOUBLE"/>
-	
-
-
 	<!-- MOVEL / MOVEJ joint or pose values for a target -->
-	
 	<field name="input_double_register_24" type="DOUBLE"/>
 	<field name="input_double_register_25" type="DOUBLE"/>
 	<field name="input_double_register_26" type="DOUBLE"/>
@@ -137,8 +116,6 @@
 	<field name="input_int_register_27" type="INT32"/>
 	<!-- I/O Input parameter number selector-->
 	<field name="input_int_register_28" type="INT32"/>
-
-	
 
 	</recipe>
 

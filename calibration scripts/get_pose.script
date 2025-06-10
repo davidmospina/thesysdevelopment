@@ -1,2 +1,0 @@
-pose = get_actual_tcp_pose()
-request_boolean_from_primary_client(pose)
